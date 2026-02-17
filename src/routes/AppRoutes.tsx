@@ -4,6 +4,9 @@ import Logout from "../pages/auth/Logout";
 import { useAuthStore } from "../store/auth.store";
 import DashboardLayout from "../components/layouts/DashboardLayout";
 import Dashboard from "../pages/dashboard/Dashboard";
+import ForgotPassword from "../pages/auth/ForgotPassword";
+import VerifyOtp from "../pages/auth/VerifyOtp";
+import ResetPassword from "../pages/auth/ResetPassword";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -24,6 +27,10 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/logout" element={<Logout />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/verify-otp" element={<VerifyOtp />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      
       <Route
         path="/"
         element={

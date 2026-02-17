@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
+import { Link } from "react-router";
 
 interface LoginFormInputs {
   email: string;
@@ -133,15 +134,15 @@ const Login = () => {
             }
             label="Keep me logged in"
           />
-          <a href="#" className="text-primary text-sm">
-            Forgot Password ?
-          </a>
+          <Link to="/forgot-password" className="text-primary text-base font-medium">
+            Forgot password
+          </Link>
         </div>
         <CustomButton
           label="Login"
           type="submit"
           buttonStyle="primary"
-          customStyles="w-full rounded! mt-7"
+          customStyles="w-full rounded! mt-7 py-4!"
         />
       </form>
     </AuthLayout>

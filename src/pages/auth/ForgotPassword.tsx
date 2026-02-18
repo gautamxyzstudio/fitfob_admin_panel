@@ -2,12 +2,14 @@ import { useForm } from "react-hook-form";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import TextInput from "../../components/modules/textInput/TextInput";
+import { useNavigate } from "react-router";
 
 interface ForgotPasswordPayload {
   email: string;
 }
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
   const {
     handleSubmit,
     control,
@@ -20,14 +22,16 @@ const ForgotPassword = () => {
   });
   const onSubmit = (data: ForgotPasswordPayload) => {
     console.log("Form data:", data);
+    sessionStorage.setItem("forgotPassword", JSON.stringify({ ...data }));
+    navigate("/verify-otp");
   };
   const onError = () => {
     console.log("Form Error", errors);
   };
   return (
     <AuthLayout customClasses="items-start">
-      <p className="text-[64px] leading-18 capitalize font-extrabold mb-3">
-        Forgot Password
+      <p className="text-[64px] leading-18 font-extrabold mb-3">
+        Forgot password
       </p>
       <span className="text-base text-secondary-text">
         Please enter your email to reset the password

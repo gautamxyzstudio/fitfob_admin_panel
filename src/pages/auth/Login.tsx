@@ -5,14 +5,23 @@ import TextInput from "../../components/modules/textInput/TextInput";
 import React, { useState } from "react";
 import {
   Checkbox,
+  Dialog,
   FormControlLabel,
   IconButton,
   InputAdornment,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import AuthenticateOTP from "./AuthenticateOTP";
+import {
+  useLogin,
+  useMfaActive,
+  useMfaVerify,
+} from "../../hooks/auth/useLogin";
+import useSnackBarStore from "../../store/snackBar.store";
+import { useAuthStore } from "../../store/auth.store";
+import { useUIStore } from "../../store/ui.store";
 
 interface LoginFormInputs {
   email: string;
@@ -22,7 +31,17 @@ interface LoginFormInputs {
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [openQr, setOpenQr] = useState(false);
+  const [qrCode, setQrCode] = useState("");
+  const [tempToken, setTempToken] = useState("");
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const { mutate: login, isPending: loginPending } = useLogin();
+  const { mutate: mfaActive, isPending: mfaAactivePending } = useMfaActive();
+  const { mutate: mfaVerify, isPending: mfaVerifyPending } = useMfaVerify();
+  const { setSnackBar } = useSnackBarStore();
+  const { setMfa, setMfaActive, setSession } = useAuthStore();
+  const { setGlobalLoader } = useUIStore();
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
   };
@@ -35,6 +54,8 @@ const Login = () => {
     handleSubmit,
     control,
     formState: { errors },
+    getValues,
+    reset,
   } = useForm<LoginFormInputs>({
     defaultValues: {
       email: "",
@@ -43,10 +64,110 @@ const Login = () => {
     },
     mode: "onChange",
   });
+
   const onSubmit = (data: LoginFormInputs) => {
     console.log("Form data:", data);
-    setOpen(true);
+    setGlobalLoader(true);
+    login(
+      {
+        identifier: data.email,
+        password: data.password,
+      },
+      {
+        onSuccess: (data) => {
+          setGlobalLoader(false);
+          console.log(data, "Response");
+          if (
+            data &&
+            (localStorage.getItem("mfa") === null ||
+              localStorage.getItem("mfa") === undefined)
+          ) {
+            setMfa(data.mfaSetup);
+            setOpenQr(true);
+            setQrCode(data.qr);
+          } else if (
+            data &&
+            localStorage.getItem("mfa") === "true" &&
+            localStorage.getItem("mfaActive") === "true"
+          ) {
+            setOpen(true);
+            setTempToken(data.tempToken);
+          }
+        },
+        onError: (error) => {
+          setGlobalLoader(false);
+          setSnackBar(error.message, "error");
+          console.log(error.message, "Error");
+        },
+      },
+    );
   };
+
+  console.log(tempToken, "token");
+  const handleAuthenticateOtpSubmit = (data: { otp: string }) => {
+    setGlobalLoader(true);
+    if (sessionStorage.getItem("mfaActive") === "true") {
+      mfaVerify(
+        {
+          tempToken: tempToken,
+          password: getValues("password"),
+          otp: data.otp,
+        },
+        {
+          onSuccess: (data) => {
+            setGlobalLoader(false);
+            console.log(data, "User on MFA Verify");
+            setOpen(false);
+            setSnackBar(data.message || "Login successfully!", "success");
+            if (data.message || data.mfaResetRequired) {
+              setMfa(false);
+              setMfaActive(false);
+              sessionStorage.removeItem("user");
+              sessionStorage.removeItem("mfa");
+              sessionStorage.removeItem("mfaActive");
+              localStorage.removeItem("user");
+              localStorage.removeItem("mfa");
+              localStorage.removeItem("mfaActive");
+            } else if (data.jwt) {
+              sessionStorage.setItem("user", JSON.stringify(data));
+              localStorage.setItem("user", JSON.stringify(data));
+              console.log(data, "User");
+              setSession(data.jwt, data.user.id);
+              navigate("/");
+            }
+
+            reset();
+          },
+          onError: (error) => {
+            setGlobalLoader(false);
+            setSnackBar(error.message, "error");
+            console.log(error.message, "Error");
+          },
+        },
+      );
+    } else {
+      mfaActive(
+        { identifier: getValues("email"), otp: data.otp },
+        {
+          onSuccess: (data) => {
+            setGlobalLoader(false);
+            console.log(data, "Response");
+            setSnackBar("MFA successfully enabled!", "success");
+            setMfaActive(true);
+            setOpen(false);
+            reset();
+          },
+          onError: (error) => {
+            setGlobalLoader(false);
+            setSnackBar(error.message, "error");
+            console.log(error.message, "Error");
+            setMfaActive(false);
+          },
+        },
+      );
+    }
+  };
+
   const onError = () => {
     console.log("Form Error", errors);
   };
@@ -156,12 +277,60 @@ const Login = () => {
             label="Login"
             type="submit"
             buttonStyle="primary"
+            disabled={loginPending || mfaAactivePending || mfaVerifyPending}
             customStyles="w-full rounded! mt-7 py-4!"
           />
         </form>
       </AuthLayout>
-
-      <AuthenticateOTP open={open} onClose={() => setOpen(false)} />
+      <Dialog
+        open={openQr}
+        maxWidth="md"
+        sx={{
+          "& .MuiPaper-root": {
+            padding: "34px",
+            width: 500,
+            boxShadow: "0 0 52px 0 rgba(0, 0, 0, 0.12)",
+            borderRadius: 5,
+            alignItems: "center",
+          },
+        }}
+        onClose={() => {
+          setOpenQr(false);
+        }}
+      >
+        <div className="w-full flex flex-col gap-y-4">
+          <div className="w-full flex flex-row items-center justify-center">
+            <p className="text-2xl font-bold">
+              Enable Two-Factor Authentication
+            </p>
+          </div>
+          <div className="w-full flex flex-col items-center justify-center gap-y-3">
+            <img src={qrCode} srcSet={qrCode} alt="QR Code" />
+            <p className="text-base font-normal text-center">
+              Scan the QR code to enable two-factor authentication
+            </p>
+            <p className="text-base font-normal text-center text-gray-500">
+              If you are not able to scan the QR code, you can enter the code
+              manually
+            </p>
+          </div>
+          <CustomButton
+            label="I've Scanned the QR Code"
+            buttonStyle="primary"
+            customStyles="w-full rounded! py-3! mt-2"
+            onClick={() => {
+              setOpenQr(false);
+              setOpen(true);
+            }}
+          />
+        </div>
+      </Dialog>
+      <AuthenticateOTP
+        open={open}
+        onClose={() => setOpen(false)}
+        onSubmit={handleAuthenticateOtpSubmit}
+        loading={mfaVerifyPending || mfaAactivePending}
+      />
     </React.Fragment>
   );
 };

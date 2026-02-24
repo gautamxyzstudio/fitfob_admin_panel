@@ -2,7 +2,6 @@
 import { Dialog } from "@mui/material";
 import { ICONS } from "../../assets/exports";
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
 import { Controller, useForm } from "react-hook-form";
 import OTPInput from "react-otp-input";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
@@ -15,13 +14,16 @@ interface AuthenticateOtpPayload {
 const AuthenticateOTP = ({
   open,
   onClose,
+  onSubmit,
+  loading = false,
 }: {
   open: boolean;
   onClose: () => void;
+  onSubmit: (data: AuthenticateOtpPayload) => void;
+  loading: boolean;
 }) => {
   const [timer, setTimer] = useState(0);
   const { setSnackBar } = useSnackBarStore();
-  const navigate = useNavigate();
 
   const {
     handleSubmit,
@@ -49,12 +51,6 @@ const AuthenticateOTP = ({
     } catch (err: any) {
       setSnackBar(err?.message || "Failed to resend OTP", "error");
     }
-  };
-  const onSubmit = (data: AuthenticateOtpPayload) => {
-    console.log(" Authenticate OTP", {
-      Otp: Number(data.otp),
-    });
-    navigate("/");
   };
 
   const onError = () => {
@@ -174,6 +170,7 @@ const AuthenticateOTP = ({
             label="Submit"
             type="submit"
             buttonStyle="primary"
+            disabled={loading}
             customStyles="rounded! py-4! px-15.25!"
           />
         </div>

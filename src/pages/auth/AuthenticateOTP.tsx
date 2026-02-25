@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Dialog } from "@mui/material";
 import { ICONS } from "../../assets/exports";
 import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import OTPInput from "react-otp-input";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
-import useSnackBarStore from "../../store/snackBar.store";
+// import useSnackBarStore from "../../store/snackBar.store";
 
 interface AuthenticateOtpPayload {
   otp: string;
@@ -23,7 +23,7 @@ const AuthenticateOTP = ({
   loading: boolean;
 }) => {
   const [timer, setTimer] = useState(0);
-  const { setSnackBar } = useSnackBarStore();
+  // const { setSnackBar } = useSnackBarStore();
 
   const {
     handleSubmit,
@@ -37,21 +37,18 @@ const AuthenticateOTP = ({
   });
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (timer > 0) {
-      interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
-    }
-    return () => clearInterval(interval);
-  }, [timer]);
+    const updateTimer = () => {
+      const seconds = new Date().getSeconds();
+      const remaining = 30 - (seconds % 30);
+      setTimer(remaining);
+    };
 
-  const handleResendOtp = async () => {
-    try {
-      setSnackBar("OTP resent to your email", "success");
-      setTimer(60);
-    } catch (err: any) {
-      setSnackBar(err?.message || "Failed to resend OTP", "error");
-    }
-  };
+    updateTimer(); // initial sync
+
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const onError = () => {
     console.log("Form Error", errors);
@@ -73,12 +70,13 @@ const AuthenticateOTP = ({
       onClose={onClose}
     >
       <img src={ICONS.AUTHENTICATE} className="w-25 h-25 mb-4" />
-      <p className="text-5xl font-bold mb-3 text-center">
+
+      <h2 className="text-5xl font-bold mb-3 text-center">
         Authenticate Your Account
-      </p>
+      </h2>
       <p className="text-base text-center">
-        Protecting your ticket is our top priority. Please confirm your account
-        by entering the authorization code sent to your email
+        For your security, enter the verification code from your authenticator
+        app to continue.
       </p>
       <form
         className="flex flex-col items-center justify-center mt-5 w-full mx-auto overflow-auto"
@@ -153,17 +151,15 @@ const AuthenticateOTP = ({
         />
         <div className="flex flex-row justify-between w-full mt-6.5">
           <p className="text-base text-secondary-text w-84.75">
-            It may take a minute to received your code Haven’t received it?
+            Enter the 6-digit code from your authenticator app.
             {timer > 0 ? (
-              <span className="text-gray-400 ml-1 ">Resend in {timer}s</span>
+              <span className="text-gray-400 ml-1">
+                A new code will generate in {timer}s
+              </span>
             ) : (
-              <button
-                type="button"
-                onClick={handleResendOtp}
-                className="text-primary ml-1 cursor-pointer font-bold"
-              >
-                Resend a new code
-              </button>
+              <span className="text-gray-400 ml-1">
+                A new code has been generated in your authenticator app.
+              </span>
             )}
           </p>
           <CustomButton

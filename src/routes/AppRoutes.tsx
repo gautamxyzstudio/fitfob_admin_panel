@@ -15,8 +15,8 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { token } = useAuthStore();
   const location = useLocation();
-  console.log("Auth Token:", token, sessionStorage.getItem("user"));
-  if (!localStorage.getItem("user")) {
+
+  if (!localStorage.getItem("user") || !token) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

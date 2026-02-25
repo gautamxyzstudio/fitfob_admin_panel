@@ -37,7 +37,7 @@ const Login = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { mutate: login, isPending: loginPending } = useLogin();
-  const { mutate: mfaActive, isPending: mfaAactivePending } = useMfaActive();
+  const { mutate: mfaActive, isPending: mfaActivePending } = useMfaActive();
   const { mutate: mfaVerify, isPending: mfaVerifyPending } = useMfaVerify();
   const { setSnackBar } = useSnackBarStore();
   const { setMfa, setMfaActive, setSession } = useAuthStore();
@@ -85,12 +85,9 @@ const Login = () => {
             setMfa(data.mfaSetup);
             setOpenQr(true);
             setQrCode(data.qr);
-          } else if (
-            data &&
-            localStorage.getItem("mfa") === "true" &&
-            localStorage.getItem("mfaActive") === "true"
-          ) {
+          } else if (data && localStorage.getItem("mfa") === "true") {
             setOpen(true);
+            setMfaActive(data.mfaRequired);
             setTempToken(data.tempToken);
           }
         },
@@ -277,7 +274,7 @@ const Login = () => {
             label="Login"
             type="submit"
             buttonStyle="primary"
-            disabled={loginPending || mfaAactivePending || mfaVerifyPending}
+            disabled={loginPending || mfaActivePending || mfaVerifyPending}
             customStyles="w-full rounded! mt-7 py-4!"
           />
         </form>
@@ -329,7 +326,7 @@ const Login = () => {
         open={open}
         onClose={() => setOpen(false)}
         onSubmit={handleAuthenticateOtpSubmit}
-        loading={mfaVerifyPending || mfaAactivePending}
+        loading={mfaVerifyPending || mfaActivePending}
       />
     </React.Fragment>
   );

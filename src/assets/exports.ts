@@ -6,6 +6,7 @@ import Setting from "./setting.svg";
 import Notification from "./notification.svg";
 import Search from "./search.svg";
 import Logout from "./logout.svg";
+import FitfobLogo from "./fitfob.svg";
 
 // Route Icons
 import App from "./app.svg";
@@ -33,6 +34,8 @@ export const ICONS = {
   Notification,
   Search,
   Logout,
+  FitfobLogo,
+  
   // Route Icons
   App, CheckIn, ClubReq, Clubs, Dashboard, Earn, Payouts, User,
   AppFill, CheckInFill, ClubReqFill, ClubsFill, DashboardFill, EarnFill, PayoutsFill, UserFill,

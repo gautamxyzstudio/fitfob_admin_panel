@@ -24,6 +24,7 @@
   --lightPurple: #80008029;
   --yellow: #fcd501;
   --lightYellow: #fcd50133;
+  --divider:#E5E7EB;
 }
 
 @media (prefers-color-scheme: light) {
@@ -44,6 +45,7 @@
     --lightPurple: #80008029;
     --yellow: #fcd501;
     --lightYellow: #fcd50133;
+    --divider:#E5E7EB
   }
 }
 
@@ -64,6 +66,7 @@
   --color-lightPurple: var(--lightPurple);
   --color-yellow: var(--yellow);
   --color-lightYellow: var(--lightYellow);
+  --color-divider: var(--divider);
 }
 
 html {

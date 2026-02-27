@@ -6,6 +6,7 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import VerifyOtp from "../pages/auth/VerifyOtp";
 import ResetPassword from "../pages/auth/ResetPassword";
+import ClubRequest from "../pages/clubRequest/ClubRequest";
 
 const ProtectedRoute = () => {
   const location = useLocation();
@@ -35,7 +36,7 @@ const AppRoutes = () => {
     <Route path="/" element={<Dashboard />} />
     <Route path="/settings" element={<div>Settings Page</div>} />
     <Route path="/profile" element={<div>Profile Page</div>} />
-    <Route path="/club-request" element={<div>Club Request Page</div>} />
+    <Route path="/club-request" element={<ClubRequest />} />
     <Route path="/clubs" element={<div>Clubs Page</div>} />
     <Route path="/users" element={<div>User's Page</div>} />
     <Route path="/earnings" element={<div>Earnings Page</div>} />

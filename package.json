@@ -15,6 +15,7 @@
     "@mui/icons-material": "^7.3.8",
     "@mui/material": "^7.3.8",
     "@mui/x-data-grid": "^8.27.1",
+    "@mui/x-data-grid-generator": "^8.27.3",
     "@mui/x-date-pickers": "^8.27.2",
     "@tailwindcss/vite": "^4.2.0",
     "@tanstack/react-query": "^5.90.21",
@@ -28,6 +29,7 @@
     "react-icons": "^5.5.0",
     "react-otp-input": "^3.1.1",
     "react-router": "^7.13.0",
+    "react-virtuoso": "^4.18.1",
     "tailwindcss": "^4.2.0",
     "zustand": "^5.0.11",
     "zxcvbn": "^4.4.2"

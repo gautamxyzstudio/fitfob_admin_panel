@@ -15,7 +15,7 @@ export const EndPoints = {
     `${BASE_URL}/api/club-owners?search=${search}`,
   getClubOwner: (ownerId: number) => `${BASE_URL}/api/club-owners/${ownerId}`,
   verifyApproval: (userId: number) =>
-    `${BASE_URL}/api/verify-approval/${userId}`,
+    `${BASE_URL}/api/verify-approval/verification-approved/${userId}`,
 
 
   // /api/verify-approval

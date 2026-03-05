@@ -38,6 +38,7 @@ export interface User {
   username: string;
   email: string;
   isVerified: boolean;
+  verification_status: string,
 }
 export interface MediaFile {
   id: number;

@@ -52,12 +52,11 @@ const Login = () => {
 
   useEffect(() => {
     if (localStorage.getItem("user")) {
-      
       setSession(
         JSON.parse(localStorage.getItem("user") || "").jwt,
         JSON.parse(localStorage.getItem("user") || "").user.id,
       );
-      navigate("/");
+      navigate("/club-request");
     }
   }, [setSession, navigate]);
   const {
@@ -86,16 +85,13 @@ const Login = () => {
       {
         onSuccess: (data) => {
           setGlobalLoader(false);
-          if (
-            data &&
-            (localStorage.getItem("mfa") === null)
-          ) {
-            setMfa(data.mfaSetup);
+          if (data.qr) {
+            // setMfa(data.mfaSetup);
             setOpenQr(true);
             setQrCode(data.qr);
-          } else if (data && localStorage.getItem("mfa") === "true") {
+          } else if (data.tempToken) {
             setOpen(true);
-            setMfaActive(data.mfaRequired);
+            // setMfaActive(data.mfaRequired);
             setTempToken(data.tempToken);
           }
         },
@@ -110,7 +106,7 @@ const Login = () => {
 
   const handleAuthenticateOtpSubmit = (data: { otp: string }) => {
     setGlobalLoader(true);
-    if (sessionStorage.getItem("mfaActive") === "true") {
+    if (tempToken) {
       mfaVerify(
         {
           tempToken: tempToken,
@@ -135,9 +131,8 @@ const Login = () => {
               sessionStorage.setItem("user", JSON.stringify(data));
               localStorage.setItem("user", JSON.stringify(data));
               setSession(data.jwt, data.user.id);
-              navigate("/");
+              navigate("/club-request");
             }
-
             reset();
           },
           onError: (error) => {
@@ -167,6 +162,7 @@ const Login = () => {
           },
         },
       );
+      reset();
     }
   };
 

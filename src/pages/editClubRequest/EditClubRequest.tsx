@@ -7,7 +7,7 @@ import {
 import CustomBox from "../../components/atoms/customBox/CustomBox";
 import { ICONS } from "../../assets/exports";
 import ActivityIndicator from "../../components/atoms/activityIndicator/ActivityIndicator";
-import { formatTo12Hour, getDaysShort } from "../../utility/utili";
+import { formatTo12Hour, getTimeShort } from "../../utility/utili";
 import { useEffect } from "react";
 import { useUIStore } from "../../store/ui.store";
 import useSnackBarStore from "../../store/snackBar.store";
@@ -21,9 +21,7 @@ import {
   type EditClubForm,
 } from "./types";
 import TextInput from "../../components/modules/textInput/TextInput";
-import {
-  Autocomplete,
-} from "@mui/material";
+import { Autocomplete } from "@mui/material";
 
 const EditClubRequest = () => {
   const { id } = useParams();
@@ -36,7 +34,7 @@ const EditClubRequest = () => {
 
   const { control, handleSubmit, setValue } = useForm<EditClubForm>({
     defaultValues: {
-      clubCategory: '',
+      clubCategory: "",
       services: [],
       facilities: [],
     },
@@ -56,19 +54,23 @@ const EditClubRequest = () => {
   }, [selectedOwner, setValue]);
 
   const logo = selectedOwner?.logo
-    ? selectedOwner.logo.url
+    ? selectedOwner.logo.formats
+      ? selectedOwner.logo.formats.thumbnail?.url
+      : selectedOwner.logo.url
     : ICONS.DummyClubProfile;
 
-  const days = getDaysShort(selectedOwner?.createdAt || "");
-  const numericDays = parseInt(days, 10);
+  const time = getTimeShort(selectedOwner?.createdAt || "");
+
+  const value = parseInt(time, 10);
+  const unit = time.replace(/[0-9]/g, "");
 
   let bgColor = "";
   let borderColor = "";
 
-  if (numericDays <= 2) {
+  if (unit === "min" || unit === "H" || (unit === "D" && value <= 2)) {
     bgColor = "bg-[#22C55E]";
     borderColor = "border-[#22C55E]";
-  } else if (numericDays <= 6) {
+  } else if (unit === "D" && value <= 6) {
     bgColor = "bg-[#FCD92B]";
     borderColor = "border-[#FCD92B]";
   } else {
@@ -128,14 +130,18 @@ const EditClubRequest = () => {
                   {selectedOwner?.clubName}
                 </span>
                 <div
-                  className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${bgColor}`}
+                  className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${selectedOwner?.user?.verification_status === "approved" ? "bg-lightGreen text-green!" : bgColor}`}
                 >
-                  {selectedOwner?.user.isVerified === false && "Pending"}
-                  <span
-                    className={`absolute -top-1.5 -right-1.5 bg-white px-2 py-1 rounded-full text-secondary-text border ${borderColor}`}
-                  >
-                    {days}D
-                  </span>
+                  {selectedOwner?.user?.verification_status === "approved"
+                    ? "Approved"
+                    : "Pending"}
+                  {selectedOwner?.user?.verification_status === "pending" && (
+                    <span
+                      className={`absolute -top-1.5 -right-1.5 bg-white px-2 py-1 rounded-full text-secondary-text border ${borderColor}`}
+                    >
+                      {time}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex flex-row items-center">
@@ -245,9 +251,9 @@ const EditClubRequest = () => {
                   field.onChange(newValue);
                 }}
                 sx={{
-                    "& .MuiOutlinedInput-root":{
-                        padding: 0
-                    }
+                  "& .MuiOutlinedInput-root": {
+                    padding: 0,
+                  },
                 }}
                 renderInput={(params) => (
                   <TextInput

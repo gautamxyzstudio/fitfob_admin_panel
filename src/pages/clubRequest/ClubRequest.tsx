@@ -6,7 +6,7 @@ import CustomSearch from "../../components/atoms/customSearch/CustomSearch";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
 import { FilterList, Visibility } from "@mui/icons-material";
 import { Box } from "@mui/material";
-import { getDaysShort } from "../../utility/utili";
+import { getTimeShort } from "../../utility/utili";
 import { ICONS } from "../../assets/exports";
 import { useNavigate } from "react-router";
 import { useUnverifiedOwners } from "../../hooks/clubOwner/useClubOwner";
@@ -26,7 +26,9 @@ const ClubRequest = () => {
       width: 180,
       renderCell: (params) => {
         const logoSrc = params.row.logo
-          ? params.row.logo.formats?.thumbnail?.url
+          ? params.row.logo.formats
+            ? params.row.logo.formats?.thumbnail?.url
+            : params.row.logo.url
           : ICONS.DummyClubProfile;
         const styles = params.row.logo ? "" : "p-2";
         return (
@@ -68,16 +70,18 @@ const ClubRequest = () => {
       headerName: "Status",
       width: 110,
       renderCell: (params) => {
-        const days = getDaysShort(params.row.createdAt);
-        const numericDays = parseInt(days, 10);
+        const time = getTimeShort(params.row.createdAt);
+
+        const value = parseInt(time, 10);
+        const unit = time.replace(/[0-9]/g, "");
 
         let bgColor = "";
         let borderColor = "";
 
-        if (numericDays <= 2) {
+        if (unit === "min" || unit === "H" || (unit === "D" && value <= 2)) {
           bgColor = "bg-[#22C55E]";
           borderColor = "border-[#22C55E]";
-        } else if (numericDays <= 6) {
+        } else if (unit === "D" && value <= 6) {
           bgColor = "bg-[#FCD92B]";
           borderColor = "border-[#FCD92B]";
         } else {
@@ -87,13 +91,13 @@ const ClubRequest = () => {
 
         return (
           <div
-            className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${bgColor}`}
+            className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${bgColor} capitalize`}
           >
-            {params.row.user.isVerified === false && "Pending"}
+            {params.row.user.verification_status}
             <span
               className={`absolute -top-1.5 -right-1.5 bg-white px-2 py-1 rounded-full text-secondary-text border ${borderColor}`}
             >
-              {days}D
+              {time}
             </span>
           </div>
         );

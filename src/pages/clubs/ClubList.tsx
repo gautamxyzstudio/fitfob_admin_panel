@@ -23,7 +23,9 @@ const ClubList = () => {
       width: 180,
       renderCell: (params) => {
         const logoSrc = params.row.logo
-          ? params.row.logo.formats?.thumbnail?.url
+          ? params.row.logo.formats
+            ? params.row.logo.formats?.thumbnail?.url
+            : params.row.logo.url
           : ICONS.DummyClubProfile;
         const styles = params.row.logo ? "" : "p-2";
         return (
@@ -70,8 +72,8 @@ const ClubList = () => {
       width: 110,
       renderCell: (params) => {
         return (
-          <div className="relative px-6.25 py-2 text-xs rounded-[52px]  bg-lightGreen text-green">
-            {params.row.user.isVerified === true && "Approved"}
+          <div className="relative px-6.25 py-2 text-xs rounded-[52px] capitalize bg-lightGreen text-green">
+            {params.row.user.verification_status}
           </div>
         );
       },

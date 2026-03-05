@@ -4,7 +4,7 @@ import { useClubOwnerDetails } from "../../hooks/clubOwner/useClubOwner";
 import CustomBox from "../../components/atoms/customBox/CustomBox";
 import { ICONS } from "../../assets/exports";
 import ActivityIndicator from "../../components/atoms/activityIndicator/ActivityIndicator";
-import { formatTo12Hour, getDaysShort } from "../../utility/utili";
+import { formatTo12Hour, getTimeShort } from "../../utility/utili";
 import { Dialog } from "@mui/material";
 import { useState } from "react";
 import { useUIStore } from "../../store/ui.store";
@@ -23,19 +23,23 @@ const ViewClubRequest = () => {
   const { setSnackBar } = useSnackBarStore();
 
   const logo = selectedOwner?.logo
-    ? selectedOwner.logo.url
+    ? selectedOwner.logo.formats
+      ? selectedOwner.logo.formats.thumbnail?.url
+      : selectedOwner.logo.url
     : ICONS.DummyClubProfile;
 
-  const days = getDaysShort(selectedOwner?.createdAt || "");
-  const numericDays = parseInt(days, 10);
+  const time = getTimeShort(selectedOwner?.createdAt || "");
+
+  const value = parseInt(time, 10);
+  const unit = time.replace(/[0-9]/g, "");
 
   let bgColor = "";
   let borderColor = "";
 
-  if (numericDays <= 2) {
+  if (unit === "min" || unit === "H" || (unit === "D" && value <= 2)) {
     bgColor = "bg-[#22C55E]";
     borderColor = "border-[#22C55E]";
-  } else if (numericDays <= 6) {
+  } else if (unit === "D" && value <= 6) {
     bgColor = "bg-[#FCD92B]";
     borderColor = "border-[#FCD92B]";
   } else {
@@ -48,12 +52,12 @@ const ViewClubRequest = () => {
     try {
       if (!userId) return;
       const response = await verifyApproval(userId);
-      if (response.message === "User approved successfully") {
+      if (response.message === "User verification approved") {
         setSnackBar("User Approved Successfully!", "success");
         setOpenModal(true);
       }
     } catch (error: any) {
-      setSnackBar(error.message || "Something went wrong", "success");
+      setSnackBar(error.message || "Something went wrong", "error");
       console.log("Error: Something went wrong", error);
       setGlobalLoader(false);
     } finally {
@@ -83,14 +87,16 @@ const ViewClubRequest = () => {
                   {selectedOwner?.clubName}
                 </span>
                 <div
-                  className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${selectedOwner?.user.isVerified ? "bg-lightGreen text-green!" : bgColor}`}
+                  className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${selectedOwner?.user?.verification_status === "approved" ? "bg-lightGreen text-green!" : bgColor}`}
                 >
-                  {selectedOwner?.user.isVerified ? "Approved" : "Pending"}
-                  {!selectedOwner?.user.isVerified && (
+                  {selectedOwner?.user?.verification_status === "approved"
+                    ? "Approved"
+                    : "Pending"}
+                  {selectedOwner?.user?.verification_status === "pending" && (
                     <span
                       className={`absolute -top-1.5 -right-1.5 bg-white px-2 py-1 rounded-full text-secondary-text border ${borderColor}`}
                     >
-                      {days}D
+                      {time}
                     </span>
                   )}
                 </div>
@@ -116,7 +122,7 @@ const ViewClubRequest = () => {
             </button>
             <button
               onClick={() => {
-                if (selectedOwner?.user.isVerified) {
+                if (selectedOwner?.user?.verification_status === "approved") {
                   navigate(`/clubs/edit/${selectedOwner?.id}`);
                 } else {
                   navigate(`/club-request/edit/${selectedOwner?.id}`);
@@ -126,7 +132,7 @@ const ViewClubRequest = () => {
             >
               <img src={ICONS.Edit} className="w-full h-full" />
             </button>
-            {!selectedOwner?.user.isVerified && (
+            {selectedOwner?.user?.verification_status === "pending" && (
               <>
                 <button
                   onClick={() => handleAccept(selectedOwner?.user.id)}

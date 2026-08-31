@@ -14,8 +14,8 @@ import dayjs from "dayjs";
 
 const ClubRequest = () => {
   const navigate = useNavigate();
-  const { unverifiedOwners, loading, fetchUnverifiedOwners } =
-    useUnverifiedOwners();
+  const [search, setSearch] = useState("");
+  const { unverifiedOwners, loading } = useUnverifiedOwners(search);
   const [page, setPage] = useState(0);
   const rowsPerPage = 10;
 
@@ -140,7 +140,7 @@ const ClubRequest = () => {
                 paddingY: "12px !important",
               },
             }}
-            onSearch={(term) => fetchUnverifiedOwners(term)}
+            onSearch={(term) => setSearch(term)}
           />
           <CustomButton
             buttonStyle="white"

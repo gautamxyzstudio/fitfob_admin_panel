@@ -2,7 +2,7 @@
 import { useForm } from "react-hook-form";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import TextInput from "../../components/modules/textInput/TextInput";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import IconButton from "@mui/material/IconButton";
@@ -49,13 +49,29 @@ const ResetPassword = () => {
     mode: "onChange",
   });
 
-  const formDataSessionStr = localStorage.getItem("forgotPasswordEmail");
-  const token = localStorage.getItem("resetToken");
-  if (formDataSessionStr && token) {
-    const formData = JSON.parse(formDataSessionStr);
-    setValue("identifier", formData.email);
-    setValue("resetToken", token);
-  }
+  useEffect(() => {
+    const rawVal = localStorage.getItem("forgotPasswordEmail");
+    const token = localStorage.getItem("resetToken");
+
+    if (rawVal) {
+      let email = rawVal;
+      try {
+        const parsed = JSON.parse(rawVal);
+        if (parsed && typeof parsed === "object" && parsed.email) {
+          email = parsed.email;
+        } else if (typeof parsed === "string") {
+          email = parsed;
+        }
+      } catch {
+        email = rawVal;
+      }
+      setValue("identifier", email);
+    }
+
+    if (token) {
+      setValue("resetToken", token);
+    }
+  }, [setValue]);
 
   const newPassword = watch("newPassword");
 

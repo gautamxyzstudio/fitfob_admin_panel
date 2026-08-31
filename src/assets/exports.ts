@@ -13,6 +13,7 @@ import Edit from "./edit.svg";
 import Location from "./loc.svg";
 import Tick from "./playerStop.svg";
 import Doc from "./doc.svg";
+import Logo from "../../public/logo.png";
 
 // Route Icons
 import App from "./app.svg";
@@ -49,6 +50,7 @@ export const ICONS = {
   Verified,
   Tick,
   Doc,
+  Logo,
 
   // Route Icons
   App,

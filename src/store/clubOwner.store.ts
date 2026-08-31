@@ -12,19 +12,17 @@ interface ClubOwnerState {
   unverifiedOwners: ClubResponse[];
   verifiedOwners: ClubResponse[];
   selectedOwner: ClubResponse | null;
-
   loading: boolean;
   error: string | null;
   refetchTrigger: number;
-
   fetchUnverifiedOwners: (search?: string) => Promise<void>;
   fetchVerifiedOwners: (search?: string) => Promise<void>;
   fetchOwnerById: (ownerId: number) => Promise<void>;
 
   updateOwner: (
-  ownerId: number,
-  payload: { data: Partial<ClubResponse> }
-) => Promise<ClubResponse | null>;
+    ownerId: number,
+    payload: { data: Partial<ClubResponse> },
+  ) => Promise<ClubResponse | null>;
 }
 
 export const useClubOwnerStore = create<ClubOwnerState>((set) => ({
@@ -43,7 +41,7 @@ export const useClubOwnerStore = create<ClubOwnerState>((set) => ({
     try {
       const response = await unverifiedOwnersApi(search);
       set({
-        unverifiedOwners: response.data,
+        unverifiedOwners: response,
         loading: false,
       });
     } catch (error: any) {
@@ -61,7 +59,7 @@ export const useClubOwnerStore = create<ClubOwnerState>((set) => ({
     try {
       const response = await verifiedOwnersApi(search);
       set({
-        verifiedOwners: response.data,
+        verifiedOwners: response,
         loading: false,
       });
     } catch (error: any) {
@@ -79,7 +77,7 @@ export const useClubOwnerStore = create<ClubOwnerState>((set) => ({
     try {
       const response = await getClubOwnerById(ownerId);
       set({
-        selectedOwner: response.data,
+        selectedOwner: response,
         loading: false,
       });
     } catch (error: any) {
@@ -90,41 +88,41 @@ export const useClubOwnerStore = create<ClubOwnerState>((set) => ({
     }
   },
 
-   // 🔹 Update Club Owner
+  // 🔹 Update Club Owner
   updateOwner: async (ownerId, payload) => {
-  set({ loading: true, error: null });
+    set({ loading: true, error: null });
 
-  try {
-    const response = await updateClubOwner(ownerId, payload);
+    try {
+      const response = await updateClubOwner(ownerId, payload);
 
-    set((state) => ({
-      // Update in unverified list
-      unverifiedOwners: state.unverifiedOwners.map((owner) =>
-        owner.id === ownerId ? { ...owner, ...response.data } : owner
-      ),
+      set((state) => ({
+        // Update in unverified list
+        unverifiedOwners: state.unverifiedOwners.map((owner) =>
+          owner.id === ownerId ? { ...owner, ...response } : owner,
+        ),
 
-      // Update in verified list
-      verifiedOwners: state.verifiedOwners.map((owner) =>
-        owner.id === ownerId ? { ...owner, ...response.data } : owner
-      ),
+        // Update in verified list
+        verifiedOwners: state.verifiedOwners.map((owner) =>
+          owner.id === ownerId ? { ...owner, ...response } : owner,
+        ),
 
-      // Update selected owner
-      selectedOwner:
-        state.selectedOwner?.id === ownerId
-          ? { ...state.selectedOwner, ...response.data }
-          : state.selectedOwner,
+        // Update selected owner
+        selectedOwner:
+          state.selectedOwner?.id === ownerId
+            ? { ...state.selectedOwner, ...response }
+            : state.selectedOwner,
 
-      refetchTrigger: state.refetchTrigger + 1,
-      loading: false,
-    }));
+        refetchTrigger: state.refetchTrigger + 1,
+        loading: false,
+      }));
 
-    return response;
-  } catch (error: any) {
-    set({
-      error: error.message || "Failed to update owner",
-      loading: false,
-    });
-    return null;
-  }
-},
+      return response;
+    } catch (error: any) {
+      set({
+        error: error.message || "Failed to update owner",
+        loading: false,
+      });
+      return null;
+    }
+  },
 }));

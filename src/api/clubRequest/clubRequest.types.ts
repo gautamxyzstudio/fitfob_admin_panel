@@ -2,31 +2,24 @@ export interface ClubResponse {
   id: number;
   publishedAt: string | null;
   createdAt: string;
-
   ownerName: string;
   phoneNumber: string;
   email: string;
-
   clubName: string;
   clubCategory: string;
   clubId: string;
-
   openingTime: string;
   closingTime: string;
   weekday: string;
   weekend: string;
-
   facilities: string[];
   services: string[];
-
   latitude: string;
   longitude: string;
-
   clubAddress: string;
   pincode: string;
   city: string;
   state: string;
-
   user: User;
   logo: MediaFile | null;
   clubPhotos: MediaFile[];
@@ -38,7 +31,7 @@ export interface User {
   username: string;
   email: string;
   isVerified: boolean;
-  verification_status: string,
+  verification_status: string;
 }
 export interface MediaFile {
   id: number;
@@ -77,11 +70,9 @@ export interface MediaFormat {
 export interface ClubOwnerDocument {
   id: number;
   documentName: string;
-
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;
-
   File: MediaFile;
 }
 

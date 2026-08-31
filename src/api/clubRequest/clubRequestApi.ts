@@ -3,8 +3,11 @@ import axios from "axios";
 import { EndPoints } from "../endpoints";
 import api from "../apiInstance";
 import { useAuthStore } from "../../store/auth.store";
+import type { ClubListResponse, ClubResponse } from "./clubRequest.types";
 
-export const unverifiedOwnersApi = async (search: string) => {
+export const unverifiedOwnersApi = async (
+  search: string,
+): Promise<ClubListResponse> => {
   const { token } = useAuthStore.getState();
 
   try {
@@ -22,7 +25,9 @@ export const unverifiedOwnersApi = async (search: string) => {
   }
 };
 
-export const verifiedOwnersApi = async (search: string) => {
+export const verifiedOwnersApi = async (
+  search: string,
+): Promise<ClubListResponse> => {
   const { token } = useAuthStore.getState();
   try {
     const response = await api.get(EndPoints.verifiedClubOwners(search), {
@@ -39,7 +44,9 @@ export const verifiedOwnersApi = async (search: string) => {
   }
 };
 
-export const getClubOwnerById = async (ownerId: number) => {
+export const getClubOwnerById = async (
+  ownerId: number,
+): Promise<ClubResponse> => {
   const { token } = useAuthStore.getState();
   try {
     const response = await api.get(EndPoints.getClubOwner(ownerId), {
@@ -56,7 +63,7 @@ export const getClubOwnerById = async (ownerId: number) => {
   }
 };
 
-export const verifyApproval = async (userId: number) => {
+export const verifyApproval = async (userId: number): Promise<any> => {
   const { token } = useAuthStore.getState();
   try {
     const response = await api.post(EndPoints.verifyApproval(userId), {
@@ -76,7 +83,7 @@ export const verifyApproval = async (userId: number) => {
 export const updateClubOwner = async (
   ownerId: number,
   payload: { data: any },
-) => {
+): Promise<ClubResponse> => {
   const { token } = useAuthStore.getState();
 
   try {

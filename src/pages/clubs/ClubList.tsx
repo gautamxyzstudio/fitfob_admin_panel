@@ -12,7 +12,8 @@ import { useVerifiedOwners } from "../../hooks/clubOwner/useClubOwner";
 
 const ClubList = () => {
   const navigate = useNavigate();
-  const { verifiedOwners, loading, fetchVerifiedOwners } = useVerifiedOwners();
+  const [search, setSearch] = useState("");
+  const { verifiedOwners, loading } = useVerifiedOwners(search);
   const [page, setPage] = useState(0);
   const rowsPerPage = 10;
 
@@ -115,7 +116,7 @@ const ClubList = () => {
                 paddingY: "12px !important",
               },
             }}
-            onSearch={(term) => fetchVerifiedOwners(term)}
+            onSearch={(term) => setSearch(term)}
           />
           <CustomButton
             buttonStyle="white"

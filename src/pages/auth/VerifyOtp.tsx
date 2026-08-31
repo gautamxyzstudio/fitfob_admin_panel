@@ -35,11 +35,29 @@ const VerifyOtp = () => {
     mode: "onChange",
   });
 
-  const formDataSessionStr = localStorage.getItem("forgotPasswordEmail");
-  if (formDataSessionStr) {
-    const formData = JSON.parse(formDataSessionStr);
-    setValue("identifier", formData.email);
-  }
+  const getStoredEmail = (): string => {
+    const rawVal = localStorage.getItem("forgotPasswordEmail");
+    if (!rawVal) return "";
+    try {
+      const parsed = JSON.parse(rawVal);
+      if (parsed && typeof parsed === "object" && parsed.email) {
+        return parsed.email;
+      }
+      if (typeof parsed === "string") {
+        return parsed;
+      }
+    } catch {
+      return rawVal;
+    }
+    return rawVal;
+  };
+
+  useEffect(() => {
+    const email = getStoredEmail();
+    if (email) {
+      setValue("identifier", email);
+    }
+  }, [setValue]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -51,11 +69,10 @@ const VerifyOtp = () => {
 
   const handleResendOtp = async () => {
     try {
+      const email = getStoredEmail();
       forgotPasswordMutate(
         {
-          identifier: formDataSessionStr
-            ? JSON.parse(formDataSessionStr).email
-            : "",
+          identifier: email,
         },
         {
           onSuccess: (res) => {

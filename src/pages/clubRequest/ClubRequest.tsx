@@ -51,7 +51,10 @@ const ClubRequest = () => {
       field: "clubId",
       headerName: "Id No.",
       width: 100,
-      renderCell: (params) => `*****${params.row.clubId?.slice(8)}`,
+      renderCell: (params) =>
+        params.row.clubId
+          ? `*****${params.row.clubId?.slice(8)}`
+          : "Not Generated",
     },
     {
       field: "location",

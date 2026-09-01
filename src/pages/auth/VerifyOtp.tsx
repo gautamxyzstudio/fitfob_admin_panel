@@ -69,6 +69,7 @@ const VerifyOtp = () => {
 
   const handleResendOtp = async () => {
     try {
+      setTimer(90);
       const email = getStoredEmail();
       forgotPasswordMutate(
         {
@@ -77,7 +78,6 @@ const VerifyOtp = () => {
         {
           onSuccess: (res) => {
             if (res.message === "OTP sent successfully") {
-              setTimer(60);
               setSnackBar("OTP resent to your email", "success");
             }
           },

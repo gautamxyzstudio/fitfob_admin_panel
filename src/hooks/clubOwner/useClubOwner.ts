@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getClubOwnerById,
+  rejectApproval,
   unverifiedOwnersApi,
   updateClubOwner,
   verifiedOwnersApi,
@@ -14,10 +15,11 @@ import type {
 
 // 🔹 Fetch Unverified Club Owners (useQuery)
 export const useUnverifiedOwners = (search: string = "") => {
-  const { data, isLoading, isFetching, error, refetch } = useQuery<ClubListResponse>({
-    queryKey: ["unverifiedOwners", search],
-    queryFn: () => unverifiedOwnersApi(search),
-  });
+  const { data, isLoading, isFetching, error, refetch } =
+    useQuery<ClubListResponse>({
+      queryKey: ["unverifiedOwners", search],
+      queryFn: () => unverifiedOwnersApi(search),
+    });
 
   return {
     unverifiedOwners: data || [],
@@ -30,10 +32,11 @@ export const useUnverifiedOwners = (search: string = "") => {
 
 // 🔹 Fetch Verified Club Owners (useQuery)
 export const useVerifiedOwners = (search: string = "") => {
-  const { data, isLoading, isFetching, error, refetch } = useQuery<ClubListResponse>({
-    queryKey: ["verifiedOwners", search],
-    queryFn: () => verifiedOwnersApi(search),
-  });
+  const { data, isLoading, isFetching, error, refetch } =
+    useQuery<ClubListResponse>({
+      queryKey: ["verifiedOwners", search],
+      queryFn: () => verifiedOwnersApi(search),
+    });
 
   return {
     verifiedOwners: data || [],
@@ -65,10 +68,17 @@ export const useUpdateClubOwner = () => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: ({ ownerId, payload }: { ownerId: number; payload: { data: any } }) =>
-      updateClubOwner(ownerId, payload),
+    mutationFn: ({
+      ownerId,
+      payload,
+    }: {
+      ownerId: number;
+      payload: { data: any };
+    }) => updateClubOwner(ownerId, payload),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["clubOwnerDetails", variables.ownerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["clubOwnerDetails", variables.ownerId],
+      });
       queryClient.invalidateQueries({ queryKey: ["unverifiedOwners"] });
       queryClient.invalidateQueries({ queryKey: ["verifiedOwners"] });
     },
@@ -99,6 +109,29 @@ export const useVerifyApproval = () => {
 
   return {
     verifyApproval: (userId: number) => mutation.mutateAsync(userId),
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    loading: mutation.isPending,
+    error: mutation.error ? (mutation.error as Error).message : null,
+  };
+};
+
+export const useRejectApproval = () => {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: ({ userId, reason }: { userId: number; reason: string }) =>
+      rejectApproval(userId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["unverifiedOwners"] });
+      queryClient.invalidateQueries({ queryKey: ["verifiedOwners"] });
+      queryClient.invalidateQueries({ queryKey: ["clubOwnerDetails"] });
+    },
+  });
+
+  return {
+    rejectApproval: (userId: number, reason: string) =>
+      mutation.mutateAsync({ userId, reason }),
     mutate: mutation.mutate,
     mutateAsync: mutation.mutateAsync,
     loading: mutation.isPending,

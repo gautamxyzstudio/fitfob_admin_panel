@@ -10,13 +10,14 @@ export const EndPoints = {
 
   // Club Request
   unverifiedClubOwners: (search: string = "") =>
-    `${BASE_URL}/api/club-owners/unverified?search=${search}`,
+    `${BASE_URL}/api/pending-club-owner/unverified?search=${search}`,
+  getPendingClubOwner: (ownerId: number) =>
+    `${BASE_URL}/api/pending-club-owner/${ownerId}`,
   verifiedClubOwners: (search: string = "") =>
     `${BASE_URL}/api/club-owners?search=${search}`,
   getClubOwner: (ownerId: number) => `${BASE_URL}/api/club-owners/${ownerId}`,
   verifyApproval: (userId: number) =>
     `${BASE_URL}/api/verify-approval/verification-approved/${userId}`,
-
-
-  // /api/verify-approval
+  rejectApproval: (userId: number) =>
+    `${BASE_URL}/api/revoke-approval/verification-rejected/${userId}`,
 };

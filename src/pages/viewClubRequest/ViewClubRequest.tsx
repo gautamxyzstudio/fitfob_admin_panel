@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import {
   useClubOwnerDetails,
   useVerifyApproval,
+  useRejectApproval,
 } from "../../hooks/clubOwner/useClubOwner";
 import CustomBox from "../../components/atoms/customBox/CustomBox";
 import { ICONS } from "../../assets/exports";
@@ -28,7 +29,11 @@ const ViewClubRequest = () => {
   const navigate = useNavigate();
   const { selectedOwner, loading } = useClubOwnerDetails(id ? Number(id) : 0);
   const { verifyApproval: approveClub } = useVerifyApproval();
+  const { rejectApproval: rejectClub } = useRejectApproval();
   const [openModal, setOpenModal] = useState(false);
+  const [openRejectModal, setOpenRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [reasonError, setReasonError] = useState("");
   const { setGlobalLoader } = useUIStore();
   const { setSnackBar } = useSnackBarStore();
 
@@ -85,6 +90,33 @@ const ViewClubRequest = () => {
       setGlobalLoader(false);
     }
   };
+  const handleReject = async () => {
+    if (!selectedOwner?.user?.id) return;
+    if (!rejectReason.trim()) {
+      setReasonError("Rejection reason is required");
+      return;
+    }
+    setGlobalLoader(true);
+    try {
+      const response = await rejectClub(
+        selectedOwner.user.id,
+        rejectReason.trim(),
+      );
+      setSnackBar(
+        response?.message || "Club Request Rejected Successfully!",
+        "success",
+      );
+      setOpenRejectModal(false);
+      setRejectReason("");
+      setReasonError("");
+      navigate("/club-request");
+    } catch (error: any) {
+      setSnackBar(error.message || "Something went wrong", "error");
+      console.log("Error: Something went wrong", error);
+    } finally {
+      setGlobalLoader(false);
+    }
+  };
 
   return loading ? (
     <div className="flex justify-center items-center h-full p-6 bg-white rounded-xl w-full">
@@ -125,7 +157,8 @@ const ViewClubRequest = () => {
               <div className="flex flex-row items-center">
                 <img src={ICONS.Location} alt="location" className="w-3 h-4" />
                 <span className="text-base text-secondary-text ml-2 capitalize">
-                  {selectedOwner?.clubAddress}
+                  {selectedOwner?.clubAddress}, {selectedOwner?.city},{" "}
+                  {selectedOwner?.state} {selectedOwner?.pincode}
                 </span>
               </div>
             </div>
@@ -158,7 +191,7 @@ const ViewClubRequest = () => {
                   Accept
                 </button>
                 <button
-                  onClick={() => navigate("/club-request")}
+                  onClick={() => setOpenRejectModal(true)}
                   className="bg-background  w-auto h-12 rounded px-7.5 text-center text-secondary-text font-bold text-base cursor-pointer "
                 >
                   Decline
@@ -335,6 +368,84 @@ const ViewClubRequest = () => {
             buttonStyle="secondary"
             onClick={() => navigate("/club-request")}
           />
+        </div>
+      </Dialog>
+
+      {/* Reject Reason Modal */}
+      <Dialog
+        open={openRejectModal}
+        onClose={() => {
+          setOpenRejectModal(false);
+          setRejectReason("");
+          setReasonError("");
+        }}
+        maxWidth="xs"
+        sx={{
+          "& .MuiPaper-root": {
+            padding: "32px 24px",
+            boxShadow: "0 0 52px 0 rgba(0, 0, 0, 0.12)",
+            borderRadius: 5,
+          },
+        }}
+      >
+        <div className="flex flex-col w-full gap-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-xl text-black">
+              Reject Club Request
+            </h3>
+            <button
+              onClick={() => {
+                setOpenRejectModal(false);
+                setRejectReason("");
+                setReasonError("");
+              }}
+              className="text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <p className="text-sm text-secondary-text">
+            Please enter a reason for rejecting this club request.
+          </p>
+          <div className="flex flex-col gap-y-1 mt-2">
+            <label className="text-sm font-medium text-black">
+              Rejection Reason <span className="text-red font-bold">*</span>
+            </label>
+            <textarea
+              rows={4}
+              value={rejectReason}
+              onChange={(e) => {
+                setRejectReason(e.target.value);
+                if (e.target.value.trim()) {
+                  setReasonError("");
+                }
+              }}
+              placeholder="Enter rejection reason..."
+              className={`w-full p-3 border rounded-lg resize-none focus:outline-none text-sm text-black ${
+                reasonError ? "border-red" : "border-divider focus:border-red"
+              }`}
+            />
+            {reasonError && (
+              <span className="text-xs text-red mt-1">{reasonError}</span>
+            )}
+          </div>
+          <div className="flex flex-row gap-x-3 w-full mt-4">
+            <CustomButton
+              label="Cancel"
+              customStyles="w-full"
+              buttonStyle="secondary"
+              onClick={() => {
+                setOpenRejectModal(false);
+                setRejectReason("");
+                setReasonError("");
+              }}
+            />
+            <CustomButton
+              label="Submit Rejection"
+              customStyles="w-full bg-red text-white"
+              onClick={handleReject}
+            />
+          </div>
         </div>
       </Dialog>
 

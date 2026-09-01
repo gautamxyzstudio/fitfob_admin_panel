@@ -54,10 +54,33 @@ export const getClubOwnerById = async (
         Authorization: `Bearer ${token}`,
       },
     });
-    return response.data;
+    if (response.data) {
+      return response.data;
+    }
+  } catch (error) {
+    // If not a 404, rethrow error. If 404, proceed to pending fallback below.
+    if (axios.isAxiosError(error) && error.response?.status !== 404) {
+      throw new Error(
+        error.response?.data?.error?.message || "An error occurred",
+      );
+    }
+  }
+
+  try {
+    const pendingResponse = await api.get(
+      EndPoints.getPendingClubOwner(ownerId),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return pendingResponse.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new Error(error.response?.data.error.message);
+      throw new Error(
+        error.response?.data?.error?.message || "Club owner not found",
+      );
     }
     throw new Error("An unexpected error occurred");
   }
@@ -71,6 +94,32 @@ export const verifyApproval = async (userId: number): Promise<any> => {
         Authorization: `Bearer ${token}`,
       },
     });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data.error.message);
+    }
+    throw new Error("An unexpected error occurred");
+  }
+};
+
+export const rejectApproval = async (
+  userId: number,
+  reason: string,
+): Promise<any> => {
+  const { token } = useAuthStore.getState();
+  try {
+    const response = await api.post(
+      EndPoints.rejectApproval(userId),
+      {
+        rejection_reason: reason,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

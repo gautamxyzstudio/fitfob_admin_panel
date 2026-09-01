@@ -97,7 +97,7 @@ const Login = () => {
         },
         onError: (error) => {
           setGlobalLoader(false);
-          setSnackBar(error.message, "error");
+          setSnackBar(error.message || "Something went wrong!", "error");
           console.log(error.message, "Error");
         },
       },
@@ -137,7 +137,7 @@ const Login = () => {
           },
           onError: (error) => {
             setGlobalLoader(false);
-            setSnackBar(error.message, "error");
+            setSnackBar(error.message || "Something went wrong!", "error");
             console.log(error.message, "Error");
           },
         },
@@ -156,7 +156,7 @@ const Login = () => {
           },
           onError: (error) => {
             setGlobalLoader(false);
-            setSnackBar(error.message, "error");
+            setSnackBar(error.message || "Something went wrong!", "error");
             console.log(error.message, "Error");
             setMfaActive(false);
           },

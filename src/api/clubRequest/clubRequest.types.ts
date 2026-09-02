@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ClubResponse {
   id: number;
   publishedAt: string | null;
@@ -24,6 +25,7 @@ export interface ClubResponse {
   logo: MediaFile | null;
   clubPhotos: MediaFile[];
   club_owner_documents: ClubOwnerDocument[];
+  [key: string]: any;
 }
 
 export interface User {

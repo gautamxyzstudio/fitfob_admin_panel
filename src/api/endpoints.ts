@@ -20,4 +20,6 @@ export const EndPoints = {
     `${BASE_URL}/api/verify-approval/verification-approved/${userId}`,
   rejectApproval: (userId: number) =>
     `${BASE_URL}/api/revoke-approval/verification-rejected/${userId}`,
+  updatePendingClubOwner: (ownerId: number) =>
+    `${BASE_URL}/api/pending-club-owner/${ownerId}`,
 };

@@ -55,7 +55,7 @@ const CustomSearch: FC<ICustomSearchProps> = ({
   return (
     <TextField
       variant="outlined"
-      type="search"
+      type="text"
       placeholder={placeholder || "Search"}
       className="w-89 bg-background border-none rounded-xl"
       sx={{

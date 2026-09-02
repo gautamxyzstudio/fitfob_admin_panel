@@ -23,12 +23,10 @@ const ClubRequest = () => {
     {
       field: "clubName",
       headerName: "Club Name",
-      width: 180,
+      width: 200,
       renderCell: (params) => {
         const logoSrc = params.row.logo
-          ? params.row.logo.formats
-            ? params.row.logo.formats?.thumbnail?.url
-            : params.row.logo.url
+          ? params.row.logo
           : ICONS.DummyClubProfile;
         const styles = params.row.logo ? "" : "p-2";
         return (
@@ -45,12 +43,12 @@ const ClubRequest = () => {
     {
       field: "ownerName",
       headerName: "Owner’s name",
-      width: 160,
+      width: 140,
     },
     {
       field: "clubId",
       headerName: "Id No.",
-      width: 100,
+      width: 120,
       renderCell: (params) =>
         params.row.clubId
           ? `*****${params.row.clubId?.slice(8)}`
@@ -60,7 +58,10 @@ const ClubRequest = () => {
       field: "location",
       headerName: "Location",
       width: 160,
-      renderCell: (params) => `${params.row.city}, ${params.row.state}`,
+      renderCell: (params) =>
+        params.row.city
+          ? `${params.row.city}, ${params.row.state}`
+          : "No Location",
     },
     {
       field: "createdAt",
@@ -109,6 +110,7 @@ const ClubRequest = () => {
     {
       field: "action",
       headerName: "Action",
+      cellClassName: "algin-right",
       width: 80,
       renderCell: (params) => {
         return (

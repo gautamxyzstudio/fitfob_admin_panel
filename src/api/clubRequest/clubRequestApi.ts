@@ -142,10 +142,34 @@ export const updateClubOwner = async (
       },
     });
 
-    return response.data;
+    if (response.data) {
+      return response.data;
+    }
+  } catch (error) {
+    // If not a 404, rethrow error. If 404, proceed to pending fallback below.
+    if (axios.isAxiosError(error) && error.response?.status !== 404) {
+      throw new Error(
+        error.response?.data?.error?.message || "An error occurred",
+      );
+    }
+  }
+
+  try {
+    const pendingResponse = await api.put(
+      EndPoints.updatePendingClubOwner(ownerId),
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return pendingResponse.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new Error(error.response?.data?.error?.message);
+      throw new Error(
+        error.response?.data?.error?.message || "Club owner not found",
+      );
     }
     throw new Error("An unexpected error occurred");
   }

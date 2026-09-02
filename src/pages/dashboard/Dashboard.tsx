@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { useAuthStore } from "../../store/auth.store";
-import { ICONS } from "../../assets/exports";
 
 const Dashboard = () => {
   const { setSession } = useAuthStore();
+  const user = JSON.parse(localStorage.getItem("user") || "");
 
   useEffect(() => {
     if (localStorage.getItem("user")) {
@@ -13,11 +13,7 @@ const Dashboard = () => {
       );
     }
   }, [setSession]);
-  return (
-    <>
-      <img src={ICONS.Logo} alt="logo" className="w-auto h-auto" />
-    </>
-  );
+  return <div>{user?.user?.role?.name} Dashboard Page</div>;
 };
 
 export default Dashboard;

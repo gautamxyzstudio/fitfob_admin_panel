@@ -24,9 +24,7 @@ const ClubList = () => {
       width: 180,
       renderCell: (params) => {
         const logoSrc = params.row.logo
-          ? params.row.logo.formats
-            ? params.row.logo.formats?.thumbnail?.url
-            : params.row.logo.url
+          ? params.row.logo
           : ICONS.DummyClubProfile;
         const styles = params.row.logo ? "" : "p-2";
         return (

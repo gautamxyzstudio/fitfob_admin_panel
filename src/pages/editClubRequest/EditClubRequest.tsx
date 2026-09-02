@@ -165,7 +165,8 @@ const EditClubRequest = () => {
               <div className="flex flex-row items-center">
                 <img src={ICONS.Location} alt="location" className="w-3 h-4" />
                 <span className="text-base text-secondary-text ml-2 capitalize">
-                  {selectedOwner?.clubAddress}
+                  {selectedOwner?.clubAddress}, {selectedOwner?.city},{" "}
+                  {selectedOwner?.state} {selectedOwner?.pincode}
                 </span>
               </div>
             </div>
@@ -380,7 +381,7 @@ const EditClubRequest = () => {
             />
           )}
         </div>
-        {selectedOwner?.clubPhotos.length === 0 ? (
+        {selectedOwner?.clubPhotos === null ? (
           <div className="mt-6 text-center text-xl font-bold">
             No Club Photo Available
           </div>
@@ -563,7 +564,7 @@ const EditClubRequest = () => {
           </button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[70vh] overflow-y-auto p-1">
-          {selectedOwner?.clubPhotos.map((item, idx) => (
+          {selectedOwner?.clubPhotos?.map((item, idx) => (
             <div
               key={idx}
               onClick={() => {

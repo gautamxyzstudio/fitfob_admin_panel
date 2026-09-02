@@ -118,6 +118,20 @@ const ViewClubRequest = () => {
     }
   };
 
+  const getCurrentStepText = (step: number): string => {
+    const steps = [
+      "Club Owner Detail", // 0
+      "Club Owner Detail", // 1
+      "Club Location", // 2
+      "Club Type, Amenities & Timings", // 3
+      "Club Documents", // 4
+      "Club Photos", // 5
+      "All Details Completed", // 6
+    ];
+
+    return steps[step] ?? steps[0];
+  };
+
   return loading ? (
     <div className="flex justify-center items-center h-full p-6 bg-white rounded-xl w-full">
       <ActivityIndicator size={80} />
@@ -126,7 +140,18 @@ const ViewClubRequest = () => {
     <div className="flex w-full h-full flex-col gap-y-5">
       {/* Club detail */}
       <CustomBox customClasses="p-4">
-        <h2 className="text-lg font-medium">Club Detail</h2>
+        <div className="flex flex-row items-center justify-between w-full">
+          <h2 className="text-lg font-medium">Club Detail</h2>
+          {selectedOwner?.currentStep && (
+            <span className="text-black text-[16px] leading-5 font-semibold capitalize">
+              Current Step:{" "}
+              <span className="capitalize">
+                {getCurrentStepText(selectedOwner?.currentStep)}
+              </span>
+            </span>
+          )}
+        </div>
+
         <div className="flex flex-row items-end justify-between w-full mt-4">
           <div className="flex flex-row gap-x-3 items-center justify-start">
             <img
@@ -182,22 +207,23 @@ const ViewClubRequest = () => {
             >
               <img src={ICONS.Edit} className="w-full h-full" />
             </button>
-            {selectedOwner?.user?.verification_status === "pending" && (
-              <>
-                <button
-                  onClick={() => handleAccept(selectedOwner?.user.id)}
-                  className="bg-[#22C55E] w-auto h-12 rounded px-7.5 text-center text-white font-bold text-base cursor-pointer "
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={() => setOpenRejectModal(true)}
-                  className="bg-background  w-auto h-12 rounded px-7.5 text-center text-secondary-text font-bold text-base cursor-pointer "
-                >
-                  Decline
-                </button>
-              </>
-            )}
+            {selectedOwner?.currentStep === 6 &&
+              selectedOwner?.user?.verification_status === "pending" && (
+                <>
+                  <button
+                    onClick={() => handleAccept(selectedOwner?.user.id)}
+                    className="bg-[#22C55E] w-auto h-12 rounded px-7.5 text-center text-white font-bold text-base cursor-pointer "
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => setOpenRejectModal(true)}
+                    className="bg-background  w-auto h-12 rounded px-7.5 text-center text-secondary-text font-bold text-base cursor-pointer "
+                  >
+                    Decline
+                  </button>
+                </>
+              )}
           </div>
         </div>
       </CustomBox>
@@ -216,9 +242,11 @@ const ViewClubRequest = () => {
           <InfoField
             label="Timings"
             value={
-              formatTo12Hour(selectedOwner?.openingTime || "") +
-              " - " +
-              formatTo12Hour(selectedOwner?.closingTime || "")
+              selectedOwner?.openingTime
+                ? formatTo12Hour(selectedOwner?.openingTime || "") +
+                  " - " +
+                  formatTo12Hour(selectedOwner?.closingTime || "")
+                : "No Timings"
             }
           />
           <InfoField label="Weekday" value={selectedOwner?.weekday} />
@@ -229,30 +257,38 @@ const ViewClubRequest = () => {
       <CustomBox customClasses="p-4">
         <h2 className="text-lg font-medium">Club Type</h2>
         <div className="mt-3 flex flex-row w-full flex-wrap gap-y-4">
-          {selectedOwner?.services.map((item, idx) => (
-            <div
-              key={idx}
-              className="w-[25%] flex flex-row gap-x-0.5 items-center"
-            >
-              <img src={ICONS.Tick} className="w-6 h-6" />
-              <span className="text-secondary-text text-sm">{item}</span>
-            </div>
-          ))}
+          {selectedOwner?.services ? (
+            selectedOwner?.services.map((item, idx) => (
+              <div
+                key={idx}
+                className="w-[25%] flex flex-row gap-x-0.5 items-center"
+              >
+                <img src={ICONS.Tick} className="w-6 h-6" />
+                <span className="text-secondary-text text-sm">{item}</span>
+              </div>
+            ))
+          ) : (
+            <span className="text-secondary-text text-sm">No Services</span>
+          )}
         </div>
       </CustomBox>
       {/* Amenities */}
       <CustomBox customClasses="p-4">
         <h2 className="text-lg font-medium">Amenities</h2>
         <div className="mt-3 flex flex-row w-full flex-wrap gap-y-4">
-          {selectedOwner?.facilities.map((item, idx) => (
-            <div
-              key={idx}
-              className="w-[25%] flex flex-row gap-x-0.5 items-center"
-            >
-              <img src={ICONS.Tick} className="w-6 h-6" />
-              <span className="text-secondary-text text-sm">{item}</span>
-            </div>
-          ))}
+          {selectedOwner?.facilities ? (
+            selectedOwner?.facilities.map((item, idx) => (
+              <div
+                key={idx}
+                className="w-[25%] flex flex-row gap-x-0.5 items-center"
+              >
+                <img src={ICONS.Tick} className="w-6 h-6" />
+                <span className="text-secondary-text text-sm">{item}</span>
+              </div>
+            ))
+          ) : (
+            <span className="text-secondary-text text-sm">No Amenities</span>
+          )}
         </div>
       </CustomBox>
 
@@ -269,7 +305,7 @@ const ViewClubRequest = () => {
             />
           )}
         </div>
-        {selectedOwner?.clubPhotos.length === 0 ? (
+        {selectedOwner?.clubPhotos === null ? (
           <div className="mt-6 text-center text-xl font-bold">
             No Club Photo Available
           </div>
@@ -563,7 +599,7 @@ const ViewClubRequest = () => {
           </button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[70vh] overflow-y-auto p-1">
-          {selectedOwner?.clubPhotos.map((item, idx) => (
+          {selectedOwner?.clubPhotos?.map((item, idx) => (
             <div
               key={idx}
               onClick={() => {

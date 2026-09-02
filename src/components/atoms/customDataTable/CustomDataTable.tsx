@@ -63,8 +63,8 @@ const CustomDataTable: React.FC<ICustomDataTableProps> = ({
     return {
       borderBottomColor: "#CFCDCC",
       padding: "14px",
-      fontSize: "16px",
-      lineHeight: "24px",
+      fontSize: "14px",
+      lineHeight: "18px",
       fontWeight: 400,
       fontFamily: '"Plus Jakarta Sans", sans-serif',
       color: "#1C1C1C",
@@ -74,8 +74,8 @@ const CustomDataTable: React.FC<ICustomDataTableProps> = ({
   const tableCellStyles = useMemo(() => {
     return {
       color: "#6B7280",
-      fontSize: "16px",
-      lineHeight: "24px",
+      fontSize: "14px",
+      lineHeight: "22px",
       fontWeight: 400,
       border: 0,
       fontFamily: '"Plus Jakarta Sans", sans-serif',
@@ -155,7 +155,7 @@ const CustomDataTable: React.FC<ICustomDataTableProps> = ({
                 ...rowStyles,
                 width: column.width,
               }}
-              align="left"
+              align={column.headerName === "Action" ? "right" : "left"}
               onClick={() => onRowClick?.(row as any)} // ✅ row click trigger
             >
               {column.field === "sNum" ? (
@@ -182,7 +182,7 @@ const CustomDataTable: React.FC<ICustomDataTableProps> = ({
           <TableCell
             key={column.field}
             sx={{ ...rowStyles, width: column.width }}
-            align="left"
+            align={column.headerName === "Action" ? "right" : "left"}
           >
             <div className="animate-pulse flex space-x-4">
               <div
@@ -204,7 +204,7 @@ const CustomDataTable: React.FC<ICustomDataTableProps> = ({
           <TableCell
             key={column.field}
             variant="head"
-            align="left"
+            align={column.headerName === "Action" ? "right" : "left"}
             style={{
               width: column.width,
               position: column.headerName === "Action" ? "sticky" : "unset",

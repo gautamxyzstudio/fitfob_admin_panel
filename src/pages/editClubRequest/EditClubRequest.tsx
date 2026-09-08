@@ -9,14 +9,15 @@ import { ICONS } from "../../assets/exports";
 import ActivityIndicator from "../../components/atoms/activityIndicator/ActivityIndicator";
 import {
   formatFileSize,
-  formatTo12Hour,
   getTimeShort,
+  parseSchedulingData,
 } from "../../utility/utili";
 import { useEffect, useState } from "react";
 import { useUIStore } from "../../store/ui.store";
 import useSnackBarStore from "../../store/snackBar.store";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
 import { FileCard } from "../../components/atoms/fileCard/FileCard";
+import WeeklySchedule from "../../components/atoms/weeklySchedule/WeeklySchedule";
 import { Controller, useForm } from "react-hook-form";
 import {
   ALL_FACILITIES,
@@ -58,18 +59,37 @@ const EditClubRequest = () => {
     },
   });
 
+  const schedulingData = parseSchedulingData(selectedOwner);
+
   useEffect(() => {
     if (selectedOwner) {
       setValue("ownerName", selectedOwner.ownerName);
       setValue("email", selectedOwner.email);
       setValue("phoneNumber", selectedOwner.phoneNumber);
       setValue("clubCategory", selectedOwner.clubCategory);
-      setValue("weekday", selectedOwner.weekday);
-      setValue("weekend", selectedOwner.weekend);
+      setValue(
+        "weekday",
+        selectedOwner.weekday ||
+        (schedulingData.weekdaySummary !== "-"
+          ? schedulingData.weekdaySummary
+          : ""),
+      );
+      setValue(
+        "weekend",
+        selectedOwner.weekend ||
+        (schedulingData.weekendSummary !== "-"
+          ? schedulingData.weekendSummary
+          : ""),
+      );
       setValue("services", selectedOwner.services || []);
       setValue("facilities", selectedOwner.facilities || []);
     }
-  }, [selectedOwner, setValue]);
+  }, [
+    selectedOwner,
+    setValue,
+    schedulingData.weekdaySummary,
+    schedulingData.weekendSummary,
+  ]);
 
   const logo = selectedOwner?.logo
     ? selectedOwner.logo.formats
@@ -102,7 +122,7 @@ const EditClubRequest = () => {
       const response = await updateClubOwner(Number(id), {
         data: {
           ownerName: data.ownerName,
-          email: data.email,
+          email: selectedOwner?.email || data.email,
           phoneNumber: data.phoneNumber,
           clubCategory: data.clubCategory,
           weekday: data.weekday,
@@ -226,18 +246,7 @@ const EditClubRequest = () => {
             label="Email Address"
             placeholder="Email"
             name="email"
-            control={control}
-          />
-
-          <TextInput
-            label="Timing"
-            placeholder="Timing"
-            name="timing"
-            value={
-              formatTo12Hour(selectedOwner?.openingTime || "") +
-              " to " +
-              formatTo12Hour(selectedOwner?.closingTime || "")
-            }
+            value={selectedOwner?.email}
             disabled
           />
 
@@ -284,6 +293,10 @@ const EditClubRequest = () => {
             )}
           />
         </div>
+        <WeeklySchedule
+          scheduleItems={schedulingData.scheduleItems}
+          isEveryday={schedulingData.isEveryday}
+        />
       </CustomBox>
       {/* Club Type */}
       <CustomBox customClasses="p-4">
@@ -502,7 +515,7 @@ const EditClubRequest = () => {
                     setSelectedPhotoIndex((prev) =>
                       prev !== null
                         ? (prev - 1 + selectedOwner.clubPhotos.length) %
-                          selectedOwner.clubPhotos.length
+                        selectedOwner.clubPhotos.length
                         : 0,
                     )
                   }
@@ -626,9 +639,9 @@ const EditClubRequest = () => {
 
             <div className="w-full min-h-75 max-h-[60vh] overflow-auto flex items-center justify-center bg-gray-50 rounded-xl p-4 border border-gray-200">
               {selectedDocument.File?.mime?.startsWith("image/") ||
-              [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"].includes(
-                selectedDocument.File?.ext?.toLowerCase() || "",
-              ) ? (
+                [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"].includes(
+                  selectedDocument.File?.ext?.toLowerCase() || "",
+                ) ? (
                 <img
                   src={selectedDocument.File.url}
                   alt={selectedDocument.documentName}

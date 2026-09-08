@@ -10,8 +10,8 @@ import { ICONS } from "../../assets/exports";
 import ActivityIndicator from "../../components/atoms/activityIndicator/ActivityIndicator";
 import {
   formatFileSize,
-  formatTo12Hour,
   getTimeShort,
+  parseSchedulingData,
 } from "../../utility/utili";
 import { Dialog } from "@mui/material";
 import { useState } from "react";
@@ -20,6 +20,7 @@ import useSnackBarStore from "../../store/snackBar.store";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
 import { FileCard } from "../../components/atoms/fileCard/FileCard";
 import { InfoField } from "../../components/atoms/infoField/InfoField";
+import WeeklySchedule from "../../components/atoms/weeklySchedule/WeeklySchedule";
 import { ChevronLeft, ChevronRight, ExternalLink, Eye, X } from "lucide-react";
 import dayjs from "dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
@@ -55,6 +56,7 @@ const ViewClubRequest = () => {
     : ICONS.DummyClubProfile;
 
   const time = getTimeShort(selectedOwner?.createdAt || "");
+  const schedulingData = parseSchedulingData(selectedOwner);
 
   const value = parseInt(time, 10);
   const unit = time.replace(/[0-9]/g, "");
@@ -239,19 +241,11 @@ const ViewClubRequest = () => {
             label="Club Category"
             value={selectedOwner?.clubCategory}
           />
-          <InfoField
-            label="Timings"
-            value={
-              selectedOwner?.openingTime
-                ? formatTo12Hour(selectedOwner?.openingTime || "") +
-                  " - " +
-                  formatTo12Hour(selectedOwner?.closingTime || "")
-                : "No Timings"
-            }
-          />
-          <InfoField label="Weekday" value={selectedOwner?.weekday} />
-          <InfoField label="Weekend" value={selectedOwner?.weekend} />
         </div>
+        <WeeklySchedule
+          scheduleItems={schedulingData.scheduleItems}
+          isEveryday={schedulingData.isEveryday}
+        />
       </CustomBox>
       {/* Club Type */}
       <CustomBox customClasses="p-4">
@@ -457,9 +451,8 @@ const ViewClubRequest = () => {
                 }
               }}
               placeholder="Enter rejection reason..."
-              className={`w-full p-3 border rounded-lg resize-none focus:outline-none text-sm text-black ${
-                reasonError ? "border-red" : "border-divider focus:border-red"
-              }`}
+              className={`w-full p-3 border rounded-lg resize-none focus:outline-none text-sm text-black ${reasonError ? "border-red" : "border-divider focus:border-red"
+                }`}
             />
             {reasonError && (
               <span className="text-xs text-red mt-1">{reasonError}</span>
@@ -539,7 +532,7 @@ const ViewClubRequest = () => {
                     setSelectedPhotoIndex((prev) =>
                       prev !== null
                         ? (prev - 1 + selectedOwner.clubPhotos.length) %
-                          selectedOwner.clubPhotos.length
+                        selectedOwner.clubPhotos.length
                         : 0,
                     )
                   }
@@ -660,9 +653,9 @@ const ViewClubRequest = () => {
 
             <div className="w-full min-h-75 max-h-[60vh] overflow-auto flex items-center justify-center bg-gray-50 rounded-xl p-4 border border-gray-200">
               {selectedDocument.File?.mime?.startsWith("image/") ||
-              [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"].includes(
-                selectedDocument.File?.ext?.toLowerCase() || "",
-              ) ? (
+                [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"].includes(
+                  selectedDocument.File?.ext?.toLowerCase() || "",
+                ) ? (
                 <img
                   src={selectedDocument.File.url}
                   alt={selectedDocument.documentName}

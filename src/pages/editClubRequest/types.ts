@@ -38,7 +38,7 @@ export const ALL_FACILITIES = [
   "Showers",
   "Trainers",
 ];
-export const CLUB_CATEGORIES = ["Luxury", "Premium", "Basic"];
+export const CLUB_CATEGORIES = ["Luxury", "Premium"];
 export type EditClubForm = {
   ownerName: string;
   email: string;

@@ -13,6 +13,11 @@ export interface ClubResponse {
   closingTime: string;
   weekday: string;
   weekend: string;
+  weekdayScheduling?: SchedulingMap | string | null;
+  weekendScheduling?: SchedulingMap | string | null;
+  scheduling?: SchedulingMap | string | null;
+  everyday?: ScheduleDayTiming | string | null;
+
   facilities: string[];
   services: string[];
   latitude: string;
@@ -25,8 +30,18 @@ export interface ClubResponse {
   logo: MediaFile | null;
   clubPhotos: MediaFile[];
   club_owner_documents: ClubOwnerDocument[];
+  
   [key: string]: any;
 }
+
+export interface ScheduleDayTiming {
+  openingTime?: string;
+  closingTime?: string;
+}
+
+export type SchedulingMap = {
+  [day: string]: ScheduleDayTiming | undefined;
+};
 
 export interface User {
   id: number;

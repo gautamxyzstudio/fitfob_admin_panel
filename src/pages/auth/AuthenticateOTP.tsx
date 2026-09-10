@@ -167,7 +167,7 @@ const AuthenticateOTP = ({
             type="submit"
             buttonStyle="primary"
             disabled={loading}
-            customStyles="rounded! py-4! px-15.25!"
+            customStyles="rounded! py-4! px-12! w-fit h-fit"
           />
         </div>
       </form>

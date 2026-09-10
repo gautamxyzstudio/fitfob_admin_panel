@@ -28,7 +28,10 @@ export interface ClubResponse {
   state: string;
   user: User;
   logo: MediaFile | null;
-  clubPhotos: MediaFile[];
+  club_photos: {
+    imageInfo: string;
+    images: MediaFile[];
+  }[];
   club_owner_documents: ClubOwnerDocument[];
   
   [key: string]: any;

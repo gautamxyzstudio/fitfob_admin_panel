@@ -290,7 +290,7 @@ const ViewClubRequest = () => {
       <CustomBox customClasses="p-4">
         <div className="w-full flex flex-row justify-between items-center-safe">
           <h2 className="text-lg font-medium">Club Photos</h2>
-          {selectedOwner?.clubPhotos && selectedOwner.clubPhotos.length > 0 && (
+          {selectedOwner?.club_photos && selectedOwner.club_photos.length > 0 && (
             <CustomButton
               label="View All"
               buttonStyle="secondary"
@@ -299,23 +299,23 @@ const ViewClubRequest = () => {
             />
           )}
         </div>
-        {selectedOwner?.clubPhotos === null ? (
+        {selectedOwner?.club_photos === null ? (
           <div className="mt-6 text-center text-xl font-bold">
             No Club Photo Available
           </div>
         ) : (
           <div
-            className={`mt-3 flex flex-row w-full flex-wrap gap-4 ${(selectedOwner?.clubPhotos?.length ?? 0) >= 5 ? "justify-between" : "justify-start"}`}
+            className={`mt-3 flex flex-row w-full flex-wrap gap-4 ${(selectedOwner?.club_photos?.length ?? 0) >= 5 ? "justify-between" : "justify-start"}`}
           >
-            {selectedOwner?.clubPhotos.map((item, idx) => (
+            {selectedOwner?.club_photos?.map((item, idx) => (
               <div
                 key={idx}
                 onClick={() => setSelectedPhotoIndex(idx)}
                 className="relative group cursor-pointer overflow-hidden rounded-xl shadow-[0_1px_12px_0_rgba(174,174,174,0.71)]"
               >
                 <img
-                  src={item?.url}
-                  alt={item.name}
+                  src={item?.images[0]?.url}
+                  alt={item?.imageInfo}
                   className="w-42 h-33 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -349,7 +349,7 @@ const ViewClubRequest = () => {
           <div
             className={`mt-3 flex flex-row w-full flex-wrap gap-4 ${(selectedOwner?.club_owner_documents?.length ?? 0) >= 3 ? "justify-between" : "justify-start"}`}
           >
-            {selectedOwner?.club_owner_documents.map((item) => (
+            {selectedOwner?.club_owner_documents?.map((item) => (
               <FileCard
                 key={item.id}
                 fileName={item.documentName + (item.File?.ext || "")}
@@ -494,21 +494,21 @@ const ViewClubRequest = () => {
           },
         }}
       >
-        {selectedPhotoIndex !== null && selectedOwner?.clubPhotos && (
+        {selectedPhotoIndex !== null && selectedOwner?.club_photos && (
           <div className="flex flex-col w-full max-w-4xl p-4">
             <div className="flex flex-row justify-between items-center pb-3 border-b border-gray-700 mb-4">
               <div className="flex flex-col">
                 <span className="font-semibold text-lg text-white">
-                  {selectedOwner.clubPhotos[selectedPhotoIndex]?.name ||
+                  {selectedOwner.club_photos[selectedPhotoIndex]?.imageInfo ||
                     `Photo ${selectedPhotoIndex + 1}`}
                 </span>
                 <span className="text-xs text-gray-400">
-                  {selectedPhotoIndex + 1} of {selectedOwner.clubPhotos.length}
+                  {selectedPhotoIndex + 1} of {selectedOwner.club_photos.length}
                 </span>
               </div>
               <div className="flex items-center gap-x-2">
                 <a
-                  href={selectedOwner.clubPhotos[selectedPhotoIndex]?.url}
+                  href={selectedOwner?.club_photos[selectedPhotoIndex]?.images[0]?.url}
                   target="_blank"
                   rel="noreferrer"
                   className="p-2 hover:bg-gray-800 rounded-full transition-colors text-gray-300 hover:text-white"
@@ -526,13 +526,13 @@ const ViewClubRequest = () => {
             </div>
 
             <div className="relative flex items-center justify-center min-h-75 max-h-[70vh]">
-              {selectedOwner.clubPhotos.length > 1 && (
+              {selectedOwner?.club_photos?.length > 1 && (
                 <button
                   onClick={() =>
                     setSelectedPhotoIndex((prev) =>
                       prev !== null
-                        ? (prev - 1 + selectedOwner.clubPhotos.length) %
-                        selectedOwner.clubPhotos.length
+                        ? (prev - 1 + selectedOwner?.club_photos?.length) %
+                        selectedOwner.club_photos.length
                         : 0,
                     )
                   }
@@ -543,17 +543,17 @@ const ViewClubRequest = () => {
               )}
 
               <img
-                src={selectedOwner.clubPhotos[selectedPhotoIndex]?.url}
-                alt={selectedOwner.clubPhotos[selectedPhotoIndex]?.name}
+                src={selectedOwner?.club_photos[selectedPhotoIndex]?.images[0]?.url}
+                alt={selectedOwner?.club_photos[selectedPhotoIndex]?.imageInfo}
                 className="max-h-[65vh] max-w-full object-contain rounded-lg shadow-2xl"
               />
 
-              {selectedOwner.clubPhotos.length > 1 && (
+                {selectedOwner?.club_photos?.length > 1 && (
                 <button
                   onClick={() =>
                     setSelectedPhotoIndex((prev) =>
                       prev !== null
-                        ? (prev + 1) % selectedOwner.clubPhotos.length
+                        ? (prev + 1) % selectedOwner?.club_photos?.length
                         : 0,
                     )
                   }
@@ -582,7 +582,7 @@ const ViewClubRequest = () => {
       >
         <div className="flex justify-between items-center border-b pb-3 mb-4 border-gray-200">
           <h2 className="text-xl font-bold text-black">
-            Club Photos ({selectedOwner?.clubPhotos?.length || 0})
+            Club Photos ({selectedOwner?.club_photos?.length || 0})
           </h2>
           <button
             onClick={() => setShowAllPhotos(false)}
@@ -592,7 +592,7 @@ const ViewClubRequest = () => {
           </button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[70vh] overflow-y-auto p-1">
-          {selectedOwner?.clubPhotos?.map((item, idx) => (
+          {selectedOwner?.club_photos?.map((item, idx) => (
             <div
               key={idx}
               onClick={() => {
@@ -602,8 +602,8 @@ const ViewClubRequest = () => {
               className="relative group cursor-pointer overflow-hidden rounded-xl border border-gray-200 shadow-sm"
             >
               <img
-                src={item?.url}
-                alt={item.name}
+                src={item?.images[0]?.url}
+                alt={item?.imageInfo}
                 className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300"
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -696,7 +696,7 @@ const ViewClubRequest = () => {
                 rel="noreferrer"
                 className="no-underline"
               >
-                <CustomButton label="Open / Download" buttonStyle="primary" />
+                <CustomButton label="Download" buttonStyle="primary" />
               </a>
             </div>
           </div>

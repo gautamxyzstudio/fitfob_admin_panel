@@ -14,11 +14,11 @@ import type {
 } from "../../api/clubRequest/clubRequest.types";
 
 // 🔹 Fetch Unverified Club Owners (useQuery)
-export const useUnverifiedOwners = (search: string = "") => {
+export const useUnverifiedOwners = (search: string = "", status?: string) => {
   const { data, isLoading, isFetching, error, refetch } =
     useQuery<ClubListResponse>({
-      queryKey: ["unverifiedOwners", search],
-      queryFn: () => unverifiedOwnersApi(search),
+      queryKey: ["unverifiedOwners", search, status],
+      queryFn: () => unverifiedOwnersApi(search, status),
     });
 
   return {

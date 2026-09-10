@@ -4,8 +4,13 @@ import type { GridColDef } from "@mui/x-data-grid";
 import CustomBox from "../../components/atoms/customBox/CustomBox";
 import CustomSearch from "../../components/atoms/customSearch/CustomSearch";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
-import { FilterList, Visibility } from "@mui/icons-material";
-import { Box } from "@mui/material";
+import {
+  Check,
+  FilterList,
+  KeyboardArrowDown,
+  Visibility,
+} from "@mui/icons-material";
+import { Box, Menu, MenuItem } from "@mui/material";
 import { getTimeShort } from "../../utility/utili";
 import { ICONS } from "../../assets/exports";
 import { useNavigate } from "react-router";
@@ -15,9 +20,26 @@ import dayjs from "dayjs";
 const ClubRequest = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const { unverifiedOwners, loading } = useUnverifiedOwners(search);
+  const [status, setStatus] = useState<"pending" | "rejected">("pending");
+  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+  const isFilterOpen = Boolean(filterAnchorEl);
+  const { unverifiedOwners, loading } = useUnverifiedOwners(search, status);
   const [page, setPage] = useState(0);
   const rowsPerPage = 10;
+
+  const handleFilterClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  const handleStatusSelect = (newStatus: "pending" | "rejected") => {
+    setStatus(newStatus);
+    setPage(0);
+    handleFilterClose();
+  };
 
   const columns: GridColDef[] = [
     {
@@ -82,7 +104,12 @@ const ClubRequest = () => {
         let bgColor = "";
         let borderColor = "";
 
-        if (unit === "min" || unit === "H" || (unit === "D" && value <= 2)) {
+        const currentStatus = params.row.user?.verification_status || status;
+
+        if (currentStatus === "rejected") {
+          bgColor = "bg-[#FF0000]";
+          borderColor = "border-[#FF0000]";
+        } else if (unit === "min" || unit === "H" || (unit === "D" && value <= 2)) {
           bgColor = "bg-[#22C55E]";
           borderColor = "border-[#22C55E]";
         } else if (unit === "D" && value <= 6) {
@@ -97,12 +124,14 @@ const ClubRequest = () => {
           <div
             className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${bgColor} capitalize`}
           >
-            {params.row.user.verification_status}
-            <span
-              className={`absolute -top-1.5 -right-1.5 bg-white px-2 py-1 rounded-full text-secondary-text border ${borderColor}`}
-            >
-              {time}
-            </span>
+            {currentStatus}
+            {currentStatus === "pending" && (
+              <span
+                className={`absolute -top-1.5 -right-1.5 bg-white px-2 py-1 rounded-full text-secondary-text border ${borderColor}`}
+              >
+                {time}
+              </span>
+            )}
           </div>
         );
       },
@@ -145,13 +174,81 @@ const ClubRequest = () => {
                 paddingY: "12px !important",
               },
             }}
-            onSearch={(term) => setSearch(term)}
+            onSearch={(term) => {
+              setSearch(term);
+              setPage(0);
+            }}
           />
           <CustomButton
             buttonStyle="white"
-            label="Filter"
+            label={status === "pending" ? "Pending" : "Rejected"}
             icon={<FilterList />}
+            endIcon={<KeyboardArrowDown />}
+            onClick={handleFilterClick}
           />
+          <Menu
+            anchorEl={filterAnchorEl}
+            open={isFilterOpen}
+            onClose={handleFilterClose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right",
+            }}
+            slotProps={{
+              paper: {
+                sx: {
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  mt: 1,
+                  minWidth: 150,
+                  p: 0.5,
+                },
+              },
+            }}
+          >
+            <MenuItem
+              selected={status === "pending"}
+              onClick={() => handleStatusSelect("pending")}
+              sx={{
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: status === "pending" ? 600 : 400,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                py: 1,
+                px: 2,
+              }}
+            >
+              <span>Pending</span>
+              {status === "pending" && (
+                <Check className="w-4 h-4 text-primary ml-2" fontSize="small" />
+              )}
+            </MenuItem>
+            <MenuItem
+              selected={status === "rejected"}
+              onClick={() => handleStatusSelect("rejected")}
+              sx={{
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: status === "rejected" ? 600 : 400,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                py: 1,
+                px: 2,
+              }}
+            >
+              <span>Rejected</span>
+              {status === "rejected" && (
+                <Check className="w-4 h-4 text-primary ml-2" fontSize="small" />
+              )}
+            </MenuItem>
+          </Menu>
         </div>
       </div>
       <CustomDataTable
@@ -160,8 +257,16 @@ const ClubRequest = () => {
         className="w-full h-full"
         isLoading={loading}
         isDataEmpty={paginatedRows?.length === 0}
-        emptyViewTitle="No Club Request found"
-        emptyViewSubTitle="There are not any Club Request"
+        emptyViewTitle={
+          status === "rejected"
+            ? "No Rejected Club Requests found"
+            : "No Club Request found"
+        }
+        emptyViewSubTitle={
+          status === "rejected"
+            ? "There are not any rejected Club Requests"
+            : "There are not any Club Request"
+        }
         withPagination={true}
         onRowClick={(row) => navigate(`/club-request/view/${row.id}`)}
         paginationControls={

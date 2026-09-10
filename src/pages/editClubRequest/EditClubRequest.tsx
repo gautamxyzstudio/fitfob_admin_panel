@@ -9,10 +9,13 @@ import { ICONS } from "../../assets/exports";
 import ActivityIndicator from "../../components/atoms/activityIndicator/ActivityIndicator";
 import {
   formatFileSize,
+  formatTimeRange,
+  formatTo12Hour,
   getTimeShort,
   parseSchedulingData,
+  type ScheduleItem,
 } from "../../utility/utili";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUIStore } from "../../store/ui.store";
 import useSnackBarStore from "../../store/snackBar.store";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
@@ -26,10 +29,286 @@ import {
   type EditClubForm,
 } from "./types";
 import TextInput from "../../components/modules/textInput/TextInput";
-import { Autocomplete, Dialog } from "@mui/material";
-import { ChevronLeft, ChevronRight, ExternalLink, Eye, X } from "lucide-react";
+import { Autocomplete, Dialog, Popover } from "@mui/material";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Copy,
+  ExternalLink,
+  Eye,
+  X,
+} from "lucide-react";
 import dayjs from "dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
+
+const parseTimeParts = (
+  timeStr?: string | null,
+  fallbackHour = "06",
+  fallbackPeriod: "AM" | "PM" = "AM",
+) => {
+  if (!timeStr) {
+    return { hour: fallbackHour, minute: "00", period: fallbackPeriod };
+  }
+  const formatted12 = formatTo12Hour(timeStr);
+  const match = formatted12.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (match) {
+    return {
+      hour: match[1].padStart(2, "0"),
+      minute: match[2],
+      period: match[3].toUpperCase() as "AM" | "PM",
+    };
+  }
+  return { hour: fallbackHour, minute: "00", period: fallbackPeriod };
+};
+
+interface TimePickerInputProps {
+  label: string;
+  value?: string;
+  onChange: (val: string) => void;
+  fallbackHour?: string;
+  fallbackPeriod?: "AM" | "PM";
+}
+
+const TimePickerInput = ({
+  label,
+  value,
+  onChange,
+  fallbackHour = "06",
+  fallbackPeriod = "AM",
+}: TimePickerInputProps) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const hourListRef = useRef<HTMLDivElement>(null);
+  const minuteListRef = useRef<HTMLDivElement>(null);
+
+  const { hour, minute, period } = parseTimeParts(
+    value,
+    fallbackHour,
+    fallbackPeriod,
+  );
+
+  const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const updateTime = (newH: string, newM: string, newP: string) => {
+    onChange(`${newH}:${newM} ${newP}`);
+  };
+
+  useEffect(() => {
+    if (anchorEl) {
+      setTimeout(() => {
+        const selectedHourEl = hourListRef.current?.querySelector<HTMLElement>(
+          `[data-value="${hour}"]`,
+        );
+        selectedHourEl?.scrollIntoView({ block: "center" });
+
+        const selectedMinuteEl =
+          minuteListRef.current?.querySelector<HTMLElement>(
+            `[data-value="${minute}"]`,
+          );
+        selectedMinuteEl?.scrollIntoView({ block: "center" });
+      }, 50);
+    }
+  }, [anchorEl, hour, minute]);
+
+  const hours = Array.from({ length: 12 }, (_, i) =>
+    String(i + 1).padStart(2, "0"),
+  );
+  const minutes = Array.from({ length: 60 }, (_, i) =>
+    String(i).padStart(2, "0"),
+  );
+  const periods = ["AM", "PM"] as const;
+
+  const displayTime = value ? formatTo12Hour(value) : `${hour}:${minute} ${period}`;
+
+  return (
+    <>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleOpen}
+        className="flex items-center gap-1.5 bg-background hover:bg-gray-200/60 px-2.5 py-1 rounded-lg border border-divider hover:border-primary transition cursor-pointer select-none group"
+      >
+        <span className="text-[11px] text-secondary-text font-medium">
+          {label}:
+        </span>
+        <span className="text-xs font-semibold text-black group-hover:text-primary transition-colors">
+          {displayTime}
+        </span>
+        <Clock
+          size={13}
+          className="text-secondary-text group-hover:text-primary transition-colors ml-0.5"
+        />
+      </div>
+
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "14px",
+              boxShadow:
+                "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+              border: "1px solid #E5E7EB",
+              mt: 0.5,
+              p: 1.5,
+              width: "240px",
+              zIndex: 1400,
+            },
+          },
+        }}
+      >
+        {/* Header showing current selection in primary color */}
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-divider">
+          <span className="text-[11px] font-medium text-secondary-text">
+            {label} Time
+          </span>
+          <span className="text-xs font-bold text-primary px-2 py-0.5 rounded bg-[#ffdfe2]">
+            {hour}:{minute} {period}
+          </span>
+        </div>
+
+        {/* 3 columns: Hour, Minute, Period */}
+        <div className="flex items-start justify-between gap-1">
+          {/* Column 1: Hours */}
+          <div className="flex flex-col items-center flex-1">
+            <span className="text-[10px] uppercase font-bold text-secondary-text mb-1 tracking-wider">
+              HR
+            </span>
+            <div
+              ref={hourListRef}
+              className="flex flex-col gap-1 max-h-44 overflow-y-auto w-full pr-0.5 scrollbar-thin"
+            >
+              {hours.map((h) => {
+                const isSelected = h === hour;
+                return (
+                  <button
+                    key={h}
+                    type="button"
+                    data-value={h}
+                    onClick={() => updateTime(h, minute, period)}
+                    className={`py-1 rounded-md text-xs font-semibold transition cursor-pointer text-center ${
+                      isSelected
+                        ? "bg-primary text-white shadow-xs"
+                        : "text-black hover:bg-[#ffdfe2]/60 hover:text-primary"
+                    }`}
+                  >
+                    {h}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Column 2: Minutes */}
+          <div className="flex flex-col items-center flex-1 border-x border-divider px-1">
+            <span className="text-[10px] uppercase font-bold text-secondary-text mb-1 tracking-wider">
+              MIN
+            </span>
+            <div
+              ref={minuteListRef}
+              className="flex flex-col gap-1 max-h-44 overflow-y-auto w-full pr-0.5 scrollbar-thin"
+            >
+              {minutes.map((m) => {
+                const isSelected = m === minute;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    data-value={m}
+                    onClick={() => updateTime(hour, m, period)}
+                    className={`py-1 rounded-md text-xs font-semibold transition cursor-pointer text-center ${
+                      isSelected
+                        ? "bg-primary text-white shadow-xs"
+                        : "text-black hover:bg-[#ffdfe2]/60 hover:text-primary"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Column 3: AM / PM */}
+          <div className="flex flex-col items-center flex-1">
+            <span className="text-[10px] uppercase font-bold text-secondary-text mb-1 tracking-wider">
+              AM/PM
+            </span>
+            <div className="flex flex-col gap-1 w-full">
+              {periods.map((p) => {
+                const isSelected = p === period;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => updateTime(hour, minute, p)}
+                    className={`py-2 rounded-md text-xs font-bold transition cursor-pointer text-center ${
+                      isSelected
+                        ? "bg-primary text-white shadow-xs"
+                        : "text-black hover:bg-[#ffdfe2]/60 hover:text-primary"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Done button in primary color */}
+        <button
+          type="button"
+          onClick={handleClose}
+          className="w-full mt-2.5 py-1 text-xs font-bold bg-primary text-white rounded-lg hover:opacity-90 transition cursor-pointer shadow-xs"
+        >
+          Done
+        </button>
+      </Popover>
+    </>
+  );
+};
+
+const buildWeekdaySchedulingPayload = (
+  items: ScheduleItem[],
+  isEveryday: boolean,
+) => {
+  const scheduling: Record<string, any> = {};
+  items.forEach((item) => {
+    const key = item.day.toLowerCase();
+    scheduling[key] = {
+      isOpen: item.isOpen,
+      openingTime: item.isOpen ? item.openingTime || "06:00 AM" : "",
+      closingTime: item.isOpen ? item.closingTime || "10:00 PM" : "",
+      timeStr: item.isOpen ? item.timeStr : "Closed",
+    };
+  });
+  if (isEveryday) {
+    const firstOpen = items.find((i) => i.isOpen) || items[0];
+    scheduling.everyday = {
+      isOpen: true,
+      openingTime: firstOpen?.openingTime || "06:00 AM",
+      closingTime: firstOpen?.closingTime || "10:00 PM",
+    };
+  }
+  return scheduling;
+};
 
 const EditClubRequest = () => {
   const { id } = useParams();
@@ -51,6 +330,13 @@ const EditClubRequest = () => {
     useState<ClubOwnerDocument | null>(null);
   const [showAllDocuments, setShowAllDocuments] = useState(false);
 
+  // Schedule Edit state
+  const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
+  const [isEverydaySchedule, setIsEverydaySchedule] = useState(false);
+  const [openScheduleModal, setOpenScheduleModal] = useState(false);
+  const [draftSchedule, setDraftSchedule] = useState<ScheduleItem[]>([]);
+  const [draftIsEveryday, setDraftIsEveryday] = useState(false);
+
   const { control, handleSubmit, setValue } = useForm<EditClubForm>({
     defaultValues: {
       clubCategory: "",
@@ -58,8 +344,6 @@ const EditClubRequest = () => {
       facilities: [],
     },
   });
-
-  const schedulingData = parseSchedulingData(selectedOwner);
 
   useEffect(() => {
     if (selectedOwner) {
@@ -69,13 +353,25 @@ const EditClubRequest = () => {
       setValue("clubCategory", selectedOwner.clubCategory);
       setValue("services", selectedOwner.services || []);
       setValue("facilities", selectedOwner.facilities || []);
+
+      const parsed = parseSchedulingData(selectedOwner);
+      setScheduleItems(parsed.scheduleItems);
+      setIsEverydaySchedule(parsed.isEveryday);
     }
-  }, [
-    selectedOwner,
-    setValue,
-    schedulingData.weekdaySummary,
-    schedulingData.weekendSummary,
-  ]);
+  }, [selectedOwner, setValue]);
+
+  const handleOpenScheduleModal = () => {
+    setDraftSchedule(JSON.parse(JSON.stringify(scheduleItems)));
+    setDraftIsEveryday(isEverydaySchedule);
+    setOpenScheduleModal(true);
+  };
+
+  const handleApplySchedule = () => {
+    setScheduleItems(draftSchedule);
+    setIsEverydaySchedule(draftIsEveryday);
+    setOpenScheduleModal(false);
+    setSnackBar("Schedule updated! Click Save to apply changes.", "success");
+  };
 
   const logo = selectedOwner?.logo
     ? selectedOwner.logo.formats
@@ -105,6 +401,14 @@ const EditClubRequest = () => {
   const handleUpdate = async (data: EditClubForm) => {
     setGlobalLoader(true);
     try {
+      const currentScheduling =
+        scheduleItems.length > 0
+          ? buildWeekdaySchedulingPayload(scheduleItems, isEverydaySchedule)
+          : selectedOwner?.weekdayScheduling;
+
+      const openDays = scheduleItems.filter((s) => s.isOpen);
+      const firstOpen = openDays[0];
+
       const response = await updateClubOwner(Number(id), {
         data: {
           ownerName: data.ownerName,
@@ -113,6 +417,14 @@ const EditClubRequest = () => {
           clubCategory: data.clubCategory,
           services: data.services,
           facilities: data.facilities,
+          weekdayScheduling: currentScheduling,
+          openingTime: firstOpen?.openingTime || selectedOwner?.openingTime,
+          closingTime: firstOpen?.closingTime || selectedOwner?.closingTime,
+          weekday: isEverydaySchedule
+            ? "Everyday"
+            : openDays.length > 0
+              ? "Monday - Saturday"
+              : "Closed",
         },
       });
 
@@ -257,8 +569,9 @@ const EditClubRequest = () => {
           />
         </div>
         <WeeklySchedule
-          scheduleItems={schedulingData.scheduleItems}
-          isEveryday={schedulingData.isEveryday}
+          scheduleItems={scheduleItems}
+          isEveryday={isEverydaySchedule}
+          onEdit={handleOpenScheduleModal}
         />
       </CustomBox>
       {/* Club Type */}
@@ -735,6 +1048,228 @@ const EditClubRequest = () => {
               </div>
             </div>
           ))}
+        </div>
+      </Dialog>
+
+      {/* Edit Weekly Schedule Modal */}
+      <Dialog
+        open={openScheduleModal}
+        onClose={() => setOpenScheduleModal(false)}
+        maxWidth="md"
+        fullWidth
+        sx={{
+          "& .MuiPaper-root": {
+            padding: "24px",
+            borderRadius: "20px",
+            maxWidth: "640px",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
+          },
+        }}
+      >
+        <div className="flex flex-col w-full gap-y-4">
+          <div className="flex justify-between items-center pb-3 border-b border-divider">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <Clock size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-black">
+                  Edit Club Timings & Schedule
+                </h3>
+                <p className="text-xs text-secondary-text">
+                  Update daily operating hours or set everyday timings
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOpenScheduleModal(false)}
+              className="text-gray-400 hover:text-gray-600 cursor-pointer p-1 rounded-md hover:bg-gray-100 transition"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Quick controls bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-background rounded-xl">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={draftIsEveryday}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setDraftIsEveryday(checked);
+                  if (checked) {
+                    const firstOpen =
+                      draftSchedule.find((d) => d.isOpen) || draftSchedule[0];
+                    const openTime = firstOpen?.openingTime || "06:00 AM";
+                    const closeTime = firstOpen?.closingTime || "10:00 PM";
+                    const timeStr = formatTimeRange(openTime, closeTime);
+                    setDraftSchedule((prev) =>
+                      prev.map((d) => ({
+                        ...d,
+                        isOpen: true,
+                        openingTime: openTime,
+                        closingTime: closeTime,
+                        timeStr,
+                      })),
+                    );
+                  }
+                }}
+                className="w-4 h-4 text-primary rounded accent-primary cursor-pointer"
+              />
+              <span className="text-xs font-semibold text-black">
+                Open Everyday (Same timings for all days)
+              </span>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => {
+                const mon = draftSchedule.find((d) => d.day === "monday");
+                if (!mon) return;
+                const openTime = mon.openingTime || "06:00 AM";
+                const closeTime = mon.closingTime || "10:00 PM";
+                const timeStr = mon.isOpen
+                  ? formatTimeRange(openTime, closeTime)
+                  : "Closed";
+                setDraftSchedule((prev) =>
+                  prev.map((d) =>
+                    d.day === "monday"
+                      ? d
+                      : {
+                          ...d,
+                          isOpen: mon.isOpen,
+                          openingTime: openTime,
+                          closingTime: closeTime,
+                          timeStr,
+                        },
+                  ),
+                );
+              }}
+              className="text-xs text-primary font-medium hover:underline flex items-center gap-1 cursor-pointer bg-white border border-divider px-2.5 py-1 rounded-md shadow-xs hover:bg-gray-50 transition"
+            >
+              <Copy size={12} />
+              <span>Copy Monday to all</span>
+            </button>
+          </div>
+
+          {/* Days list */}
+          <div className="flex flex-col gap-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            {draftSchedule.map((item, idx) => {
+              return (
+                <div
+                  key={item.day}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-xl border transition-all gap-2 ${
+                    item.isOpen
+                      ? "bg-white border-divider shadow-xs"
+                      : "bg-gray-50/70 border-dashed border-gray-300 opacity-75"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 w-36">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraftSchedule((prev) =>
+                          prev.map((d, i) => {
+                            if (i !== idx) return d;
+                            const newIsOpen = !d.isOpen;
+                            const openTime = d.openingTime || "06:00 AM";
+                            const closeTime = d.closingTime || "10:00 PM";
+                            return {
+                              ...d,
+                              isOpen: newIsOpen,
+                              openingTime: newIsOpen ? openTime : "",
+                              closingTime: newIsOpen ? closeTime : "",
+                              timeStr: newIsOpen
+                                ? formatTimeRange(openTime, closeTime)
+                                : "Closed",
+                            };
+                          }),
+                        );
+                      }}
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded cursor-pointer transition ${
+                        item.isOpen
+                          ? "bg-lightGreen text-green hover:opacity-80"
+                          : "bg-lightRed text-red hover:opacity-80"
+                      }`}
+                    >
+                      {item.isOpen ? "OPEN" : "CLOSED"}
+                    </button>
+                    <span className="text-sm font-semibold text-black capitalize">
+                      {item.label}
+                    </span>
+                  </div>
+
+                  {item.isOpen ? (
+                    <div className="flex items-center gap-2">
+                      <TimePickerInput
+                        label="Opens"
+                        value={item.openingTime || "06:00 AM"}
+                        fallbackHour="06"
+                        fallbackPeriod="AM"
+                        onChange={(formatted) => {
+                          setDraftSchedule((prev) =>
+                            prev.map((d, i) => {
+                              if (i !== idx) return d;
+                              const close = d.closingTime || "10:00 PM";
+                              return {
+                                ...d,
+                                openingTime: formatted,
+                                timeStr: formatTimeRange(formatted, close),
+                              };
+                            }),
+                          );
+                        }}
+                      />
+                      <span className="text-xs text-secondary-text font-bold">
+                        -
+                      </span>
+                      <TimePickerInput
+                        label="Closes"
+                        value={item.closingTime || "10:00 PM"}
+                        fallbackHour="10"
+                        fallbackPeriod="PM"
+                        onChange={(formatted) => {
+                          setDraftSchedule((prev) =>
+                            prev.map((d, i) => {
+                              if (i !== idx) return d;
+                              const open = d.openingTime || "06:00 AM";
+                              return {
+                                ...d,
+                                closingTime: formatted,
+                                timeStr: formatTimeRange(open, formatted),
+                              };
+                            }),
+                          );
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-xs text-secondary-text italic px-2">
+                      Closed all day
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex justify-end items-center gap-x-3 pt-3 border-t border-divider">
+            <CustomButton
+              type="button"
+              label="Cancel"
+              buttonStyle="secondary"
+              onClick={() => setOpenScheduleModal(false)}
+            />
+            <CustomButton
+              type="button"
+              label="Apply Schedule"
+              buttonStyle="primary"
+              onClick={handleApplySchedule}
+            />
+          </div>
         </div>
       </Dialog>
     </form>

@@ -9,8 +9,8 @@ export const EndPoints = {
   resetPassword: `${BASE_URL}/api/auth/reset-password`,
 
   // Club Request
-  unverifiedClubOwners: (search: string = "") =>
-    `${BASE_URL}/api/pending-club-owner/unverified?search=${search}`,
+  unverifiedClubOwners: (search: string = "",status?: string) =>
+    `${BASE_URL}/api/pending-club-owner/unverified?search=${search}&status=${status}`,
   getPendingClubOwner: (ownerId: number) =>
     `${BASE_URL}/api/pending-club-owner/${ownerId}`,
   verifiedClubOwners: (search: string = "") =>

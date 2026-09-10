@@ -3,7 +3,8 @@ import React from "react";
 interface CustomButtonProps {
   label?: string;
   icon?: React.ReactNode;
-  onClick?: () => void;
+  endIcon?: React.ReactNode;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
   buttonStyle?: "primary" | "secondary" | "disabled" | "white" | "outlined";
   customStyles?: string;
@@ -29,6 +30,7 @@ const getButtonStyles = (
 const CustomButton: React.FC<CustomButtonProps> = ({
   label,
   icon,
+  endIcon,
   onClick,
   buttonStyle = "primary",
   disabled = false,
@@ -42,10 +44,11 @@ const CustomButton: React.FC<CustomButtonProps> = ({
       disabled={disabled}
       className={`${getButtonStyles(
         buttonStyle,
-      )} ${customStyles} flex items-center justify-center gap-x-1 px-4 py-2 rounded-md font-bold text-base transition-opacity duration-200`}
+      )} ${customStyles} flex items-center justify-center gap-x-1.5 px-4 py-2 rounded-md font-bold text-base transition-opacity duration-200`}
     >
       {icon && <span>{icon}</span>}
       {label && <span>{label}</span>}
+      {endIcon && <span>{endIcon}</span>}
     </button>
   );
 };

@@ -2,6 +2,13 @@ import { createTheme } from "@mui/material/styles";
 import type {} from "@mui/x-date-pickers/themeAugmentation";
 
 const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#e23744",
+      light: "#ffdfe2",
+      contrastText: "#ffffff",
+    },
+  },
   typography: {
     h1: {
       fontFamily: '"Plus Jakarta Sans", sans-serif;',

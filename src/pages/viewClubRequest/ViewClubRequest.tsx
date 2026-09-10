@@ -13,7 +13,7 @@ import {
   getTimeShort,
   parseSchedulingData,
 } from "../../utility/utili";
-import { Dialog } from "@mui/material";
+import { Dialog, Menu, MenuItem } from "@mui/material";
 import { useState } from "react";
 import { useUIStore } from "../../store/ui.store";
 import useSnackBarStore from "../../store/snackBar.store";
@@ -21,9 +21,25 @@ import CustomButton from "../../components/atoms/customButton/CustomButton";
 import { FileCard } from "../../components/atoms/fileCard/FileCard";
 import { InfoField } from "../../components/atoms/infoField/InfoField";
 import WeeklySchedule from "../../components/atoms/weeklySchedule/WeeklySchedule";
-import { ChevronLeft, ChevronRight, ExternalLink, Eye, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Eye,
+  X,
+} from "lucide-react";
 import dayjs from "dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
+
+const PRESET_REJECTION_REASONS = [
+  "Invalid or unclear government documents",
+  "Document details do not match owner information",
+  "Club photos are unclear or insufficient",
+  "Invalid or unverified club location/address",
+  "Incomplete club details or amenities",
+  "Other",
+];
 
 const ViewClubRequest = () => {
   const { id } = useParams();
@@ -33,8 +49,10 @@ const ViewClubRequest = () => {
   const { rejectApproval: rejectClub } = useRejectApproval();
   const [openModal, setOpenModal] = useState(false);
   const [openRejectModal, setOpenRejectModal] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
+  const [rejectReasonOption, setRejectReasonOption] = useState("");
+  const [customRejectReason, setCustomRejectReason] = useState("");
   const [reasonError, setReasonError] = useState("");
+  const [reasonAnchorEl, setReasonAnchorEl] = useState<HTMLElement | null>(null);
   const { setGlobalLoader } = useUIStore();
   const { setSnackBar } = useSnackBarStore();
 
@@ -92,25 +110,41 @@ const ViewClubRequest = () => {
       setGlobalLoader(false);
     }
   };
+  const closeRejectModal = () => {
+    setOpenRejectModal(false);
+    setRejectReasonOption("");
+    setCustomRejectReason("");
+    setReasonError("");
+    setReasonAnchorEl(null);
+  };
+
   const handleReject = async () => {
     if (!selectedOwner?.user?.id) return;
-    if (!rejectReason.trim()) {
+    if (!rejectReasonOption) {
+      setReasonError("Please select a rejection reason");
+      return;
+    }
+    if (rejectReasonOption === "Other" && !customRejectReason.trim()) {
       setReasonError("Rejection reason is required");
       return;
     }
+
+    const finalReason =
+      rejectReasonOption === "Other"
+        ? customRejectReason.trim()
+        : rejectReasonOption;
+
     setGlobalLoader(true);
     try {
       const response = await rejectClub(
         selectedOwner.user.id,
-        rejectReason.trim(),
+        finalReason,
       );
       setSnackBar(
         response?.message || "Club Request Rejected Successfully!",
         "success",
       );
-      setOpenRejectModal(false);
-      setRejectReason("");
-      setReasonError("");
+      closeRejectModal();
       navigate("/club-request");
     } catch (error: any) {
       setSnackBar(error.message || "Something went wrong", "error");
@@ -404,11 +438,7 @@ const ViewClubRequest = () => {
       {/* Reject Reason Modal */}
       <Dialog
         open={openRejectModal}
-        onClose={() => {
-          setOpenRejectModal(false);
-          setRejectReason("");
-          setReasonError("");
-        }}
+        onClose={closeRejectModal}
         maxWidth="xs"
         sx={{
           "& .MuiPaper-root": {
@@ -424,50 +454,153 @@ const ViewClubRequest = () => {
               Reject Club Request
             </h3>
             <button
-              onClick={() => {
-                setOpenRejectModal(false);
-                setRejectReason("");
-                setReasonError("");
-              }}
+              onClick={closeRejectModal}
               className="text-gray-400 hover:text-gray-600 cursor-pointer"
             >
               <X size={20} />
             </button>
           </div>
           <p className="text-sm text-secondary-text">
-            Please enter a reason for rejecting this club request.
+            Please select a reason for rejecting this club request.
           </p>
-          <div className="flex flex-col gap-y-1 mt-2">
+          <div className="flex flex-col gap-y-1 mt-1">
             <label className="text-sm font-medium text-black">
               Rejection Reason <span className="text-red font-bold">*</span>
             </label>
-            <textarea
-              rows={4}
-              value={rejectReason}
-              onChange={(e) => {
-                setRejectReason(e.target.value);
-                if (e.target.value.trim()) {
-                  setReasonError("");
-                }
-              }}
-              placeholder="Enter rejection reason..."
-              className={`w-full p-3 border rounded-lg resize-none focus:outline-none text-sm text-black ${reasonError ? "border-red" : "border-divider focus:border-red"
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => setReasonAnchorEl(e.currentTarget)}
+                className={`w-full p-3 pr-10 border rounded-lg flex items-center justify-between text-sm bg-white cursor-pointer transition text-left focus:outline-none ${
+                  reasonError && !rejectReasonOption
+                    ? "border-red"
+                    : Boolean(reasonAnchorEl)
+                      ? "border-red ring-1 ring-red"
+                      : "border-divider hover:border-red"
                 }`}
-            />
-            {reasonError && (
-              <span className="text-xs text-red mt-1">{reasonError}</span>
+              >
+                <span
+                  className={
+                    rejectReasonOption
+                      ? "text-black font-medium"
+                      : "text-secondary-text"
+                  }
+                >
+                  {rejectReasonOption || "Select a rejection reason..."}
+                </span>
+                <ChevronDown
+                  size={18}
+                  className={`text-secondary-text transition-transform duration-200 ${
+                    Boolean(reasonAnchorEl) ? "rotate-180 text-primary" : ""
+                  }`}
+                />
+              </button>
+              <Menu
+                anchorEl={reasonAnchorEl}
+                open={Boolean(reasonAnchorEl)}
+                onClose={() => setReasonAnchorEl(null)}
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "left",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "left",
+                }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      borderRadius: "12px",
+                      boxShadow:
+                        "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+                      border: "1px solid #E5E7EB",
+                      mt: 0.5,
+                      width: reasonAnchorEl
+                        ? `${reasonAnchorEl.clientWidth}px`
+                        : "auto",
+                      maxWidth: reasonAnchorEl
+                        ? `${reasonAnchorEl.clientWidth}px`
+                        : "auto",
+                      p: 0.5,
+                      zIndex: 1400,
+                    },
+                  },
+                }}
+              >
+                {PRESET_REJECTION_REASONS.map((option) => {
+                  const isSelected = rejectReasonOption === option;
+                  return (
+                    <MenuItem
+                      key={option}
+                      selected={isSelected}
+                      onClick={() => {
+                        setRejectReasonOption(option);
+                        setReasonError("");
+                        setReasonAnchorEl(null);
+                      }}
+                      sx={{
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                        py: 1.25,
+                        px: 1.5,
+                        my: 0.25,
+                        whiteSpace: "normal",
+                        lineHeight: 1.4,
+                        color: isSelected ? "#ffffff" : "#1c1c1c",
+                        backgroundColor: isSelected
+                          ? "#e23744 !important"
+                          : "transparent",
+                        fontWeight: isSelected ? 600 : 400,
+                        "&:hover": {
+                          backgroundColor: isSelected ? "#e23744" : "#ffdfe2",
+                          color: isSelected ? "#ffffff" : "#e23744",
+                        },
+                      }}
+                    >
+                      {option}
+                    </MenuItem>
+                  );
+                })}
+              </Menu>
+            </div>
+            {reasonError && !rejectReasonOption && (
+              <span className="text-xs text-red mt-0.5">{reasonError}</span>
             )}
           </div>
+
+          {rejectReasonOption === "Other" && (
+            <div className="flex flex-col gap-y-1">
+              <label className="text-sm font-medium text-black">
+                Specify Reason <span className="text-red font-bold">*</span>
+              </label>
+              <textarea
+                rows={4}
+                value={customRejectReason}
+                onChange={(e) => {
+                  setCustomRejectReason(e.target.value);
+                  if (e.target.value.trim()) {
+                    setReasonError("");
+                  }
+                }}
+                placeholder="Enter rejection reason..."
+                className={`w-full p-3 border rounded-lg resize-none focus:outline-none text-sm text-black ${
+                  reasonError && rejectReasonOption === "Other"
+                    ? "border-red"
+                    : "border-divider focus:border-red"
+                }`}
+              />
+              {reasonError && rejectReasonOption === "Other" && (
+                <span className="text-xs text-red mt-0.5">{reasonError}</span>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-row gap-x-3 w-full mt-4">
             <CustomButton
               label="Cancel"
               customStyles="w-full"
               buttonStyle="secondary"
-              onClick={() => {
-                setOpenRejectModal(false);
-                setRejectReason("");
-                setReasonError("");
-              }}
+              onClick={closeRejectModal}
             />
             <CustomButton
               label="Submit Rejection"

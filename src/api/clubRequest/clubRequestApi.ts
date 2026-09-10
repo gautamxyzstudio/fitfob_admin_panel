@@ -7,11 +7,12 @@ import type { ClubListResponse, ClubResponse } from "./clubRequest.types";
 
 export const unverifiedOwnersApi = async (
   search: string,
+  status?: string,
 ): Promise<ClubListResponse> => {
   const { token } = useAuthStore.getState();
 
   try {
-    const response = await api.get(EndPoints.unverifiedClubOwners(search), {
+    const response = await api.get(EndPoints.unverifiedClubOwners(search, status), {
       headers: {
         Authorization: `Bearer ${token}`,
       },

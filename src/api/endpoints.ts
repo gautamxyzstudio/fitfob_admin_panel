@@ -22,4 +22,17 @@ export const EndPoints = {
     `${BASE_URL}/api/revoke-approval/verification-rejected/${userId}`,
   updatePendingClubOwner: (ownerId: number) =>
     `${BASE_URL}/api/pending-club-owner/${ownerId}`,
+
+  // Club Facilities
+  clubFacilities: `${BASE_URL}/api/club-facilities`,
+  clubFacilityById: (docId: string) =>
+    `${BASE_URL}/api/club-facilities/${docId}`,
+
+  // Club Services (Club Types)
+  clubServices: `${BASE_URL}/api/club-services`,
+  clubServiceById: (docId: string) =>
+    `${BASE_URL}/api/club-services/${docId}`,
+
+  // Upload
+  upload: `${BASE_URL}/api/upload`,
 };

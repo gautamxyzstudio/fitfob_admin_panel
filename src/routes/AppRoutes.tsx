@@ -18,6 +18,8 @@ import ClubList from "../pages/clubs/ClubList";
 import { useEffect } from "react";
 import { useAuthStore } from "../store/auth.store";
 import EditClubRequest from "../pages/editClubRequest/EditClubRequest";
+import FacilitiesPage from "../pages/appSettings/FacilitiesPage";
+import ClubTypesPage from "../pages/appSettings/ClubTypesPage";
 
 const ProtectedRoute = () => {
   const location = useLocation();
@@ -80,8 +82,8 @@ const AppRoutes = () => {
 
         <Route path="/app">
           <Route index element={<Navigate to="facilities" replace />} />
-          <Route path="facilities" element={<div>App Facilities Page</div>} />
-          <Route path="club-types" element={<div>App Club Types Page</div>} />
+          <Route path="facilities" element={<FacilitiesPage />} />
+          <Route path="club-types" element={<ClubTypesPage />} />
         </Route>
       </Route>
     </Routes>

@@ -35,4 +35,9 @@ export const EndPoints = {
 
   // Upload
   upload: `${BASE_URL}/api/upload`,
+
+  // Client Details
+  clientDetails: `${BASE_URL}/api/client-details`,
+  clientDetailByDocId: (docId: string) =>
+    `${BASE_URL}/api/client-details/${docId}`,
 };

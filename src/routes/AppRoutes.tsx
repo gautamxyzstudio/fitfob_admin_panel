@@ -20,6 +20,9 @@ import { useAuthStore } from "../store/auth.store";
 import EditClubRequest from "../pages/editClubRequest/EditClubRequest";
 import FacilitiesPage from "../pages/appSettings/FacilitiesPage";
 import ClubTypesPage from "../pages/appSettings/ClubTypesPage";
+import UserList from "../pages/users/UserList";
+import UserDetail from "../pages/users/UserDetail";
+import EditUser from "../pages/users/EditUser";
 
 const ProtectedRoute = () => {
   const location = useLocation();
@@ -61,7 +64,11 @@ const AppRoutes = () => {
         {/* <Route path="/club-request" element={<ClubRequest />} />
         <Route path="/view-club-request/:id" element={<ViewClubRequest />} /> */}
         {/* <Route path="/clubs" element={<ClubList />} /> */}
-        <Route path="/users" element={<div>User's Page</div>} />
+        <Route path="/users">
+          <Route index element={<UserList />} />
+          <Route path="view/:docId" element={<UserDetail />} />
+          <Route path="edit/:docId" element={<EditUser />} />
+        </Route>
         <Route path="/earnings" element={<div>Earnings Page</div>} />
         <Route path="/check-in" element={<div>Check In Page</div>} />
         <Route path="/payouts" element={<div>Payouts Page</div>} />

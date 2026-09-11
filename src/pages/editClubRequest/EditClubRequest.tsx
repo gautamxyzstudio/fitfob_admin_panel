@@ -15,7 +15,7 @@ import {
   parseSchedulingData,
   type ScheduleItem,
 } from "../../utility/utili";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useUIStore } from "../../store/ui.store";
 import useSnackBarStore from "../../store/snackBar.store";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
@@ -23,11 +23,14 @@ import { FileCard } from "../../components/atoms/fileCard/FileCard";
 import WeeklySchedule from "../../components/atoms/weeklySchedule/WeeklySchedule";
 import { Controller, useForm } from "react-hook-form";
 import {
-  ALL_FACILITIES,
-  ALL_SERVICES,
   CLUB_CATEGORIES,
   type EditClubForm,
 } from "./types";
+import {
+  useClubTypes,
+  useFacilities,
+} from "../../hooks/appSettings/useAppSettings";
+import type { FacilityOrClubTypeItem } from "../../api/appSettings/appSettings.types";
 import TextInput from "../../components/modules/textInput/TextInput";
 import { Autocomplete, Dialog, Popover } from "@mui/material";
 import {
@@ -310,11 +313,134 @@ const buildWeekdaySchedulingPayload = (
   return scheduling;
 };
 
+const matchOwnerItems = (
+  rawOwnerItems: any,
+  availableNames: string[],
+  availableObjects: FacilityOrClubTypeItem[] = [],
+): string[] => {
+  if (!rawOwnerItems) return [];
+
+  let list: any[] = [];
+  if (Array.isArray(rawOwnerItems)) {
+    list = rawOwnerItems;
+  } else if (typeof rawOwnerItems === "string") {
+    const trimmed = rawOwnerItems.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) list = parsed;
+        else list = trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+      } catch {
+        list = trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+    } else {
+      list = trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+  }
+
+  const matchedSet = new Set<string>();
+
+  for (const rawItem of list) {
+    if (!rawItem) continue;
+
+    let itemName = "";
+    let itemId: any = null;
+
+    if (typeof rawItem === "string") {
+      itemName = rawItem.trim();
+    } else if (typeof rawItem === "object") {
+      itemName = (
+        rawItem.name ||
+        rawItem.attributes?.name ||
+        rawItem.title ||
+        rawItem.facilityName ||
+        rawItem.serviceName ||
+        ""
+      ).trim();
+      itemId = rawItem.documentId || rawItem.id;
+    } else {
+      itemName = String(rawItem).trim();
+    }
+
+    // 1. Match against availableNames (case-insensitive)
+    const matchedByName = availableNames.find(
+      (availName) => availName.toLowerCase() === itemName.toLowerCase(),
+    );
+
+    if (matchedByName) {
+      matchedSet.add(matchedByName);
+      continue;
+    }
+
+    // 2. Match against availableObjects by ID / documentId
+    if (availableObjects && availableObjects.length > 0) {
+      const matchedByObj = availableObjects.find((obj) => {
+        if (!obj) return false;
+        if (
+          itemId !== undefined &&
+          itemId !== null &&
+          itemId !== "" &&
+          (obj.documentId === itemId || String((obj as any).id) === String(itemId))
+        ) {
+          return true;
+        }
+        if (
+          itemName &&
+          (obj.documentId === itemName || String((obj as any).id) === itemName)
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+      if (matchedByObj?.name) {
+        matchedSet.add(matchedByObj.name.trim());
+        continue;
+      }
+    }
+
+    // 3. Fallback: preserve existing owner name
+    if (itemName) {
+      matchedSet.add(itemName);
+    }
+  }
+
+  return Array.from(matchedSet);
+};
+
 const EditClubRequest = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { selectedOwner, loading } = useClubOwnerDetails(id ? Number(id) : 0);
   const { updateClubOwner } = useUpdateClubOwner();
+
+  const { facilities, isLoading: isFacilitiesLoading } = useFacilities();
+  const { clubTypes, isLoading: isClubTypesLoading } = useClubTypes();
+
+  // Extract all facility and clubtype (service) names only
+  const facilityNames = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (facilities || [])
+            .map((item) => (typeof item === "string" ? item : item?.name)?.trim())
+            .filter(Boolean) as string[],
+        ),
+      ),
+    [facilities],
+  );
+
+  const serviceNames = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (clubTypes || [])
+            .map((item) => (typeof item === "string" ? item : item?.name)?.trim())
+            .filter(Boolean) as string[],
+        ),
+      ),
+    [clubTypes],
+  );
 
   const { setGlobalLoader } = useUIStore();
   const { setSnackBar } = useSnackBarStore();
@@ -345,20 +471,54 @@ const EditClubRequest = () => {
     },
   });
 
-  useEffect(() => {
-    if (selectedOwner) {
-      setValue("ownerName", selectedOwner.ownerName);
-      setValue("email", selectedOwner.email);
-      setValue("phoneNumber", selectedOwner.phoneNumber);
-      setValue("clubCategory", selectedOwner.clubCategory);
-      setValue("services", selectedOwner.services || []);
-      setValue("facilities", selectedOwner.facilities || []);
+  const lastOwnerIdRef = useRef<number | null>(null);
+  const isFormInitializedRef = useRef(false);
 
-      const parsed = parseSchedulingData(selectedOwner);
-      setScheduleItems(parsed.scheduleItems);
-      setIsEverydaySchedule(parsed.isEveryday);
+  useEffect(() => {
+    if (selectedOwner && selectedOwner.id !== lastOwnerIdRef.current) {
+      lastOwnerIdRef.current = selectedOwner.id;
+      isFormInitializedRef.current = false;
     }
-  }, [selectedOwner, setValue]);
+  }, [selectedOwner]);
+
+  useEffect(() => {
+    if (selectedOwner && !isFacilitiesLoading && !isClubTypesLoading) {
+      if (!isFormInitializedRef.current) {
+        isFormInitializedRef.current = true;
+        setValue("ownerName", selectedOwner.ownerName);
+        setValue("email", selectedOwner.email);
+        setValue("phoneNumber", selectedOwner.phoneNumber);
+        setValue("clubCategory", selectedOwner.clubCategory);
+
+        const matchedServices = matchOwnerItems(
+          selectedOwner.services,
+          serviceNames,
+          clubTypes,
+        );
+        setValue("services", matchedServices);
+
+        const matchedFacilities = matchOwnerItems(
+          selectedOwner.facilities,
+          facilityNames,
+          facilities,
+        );
+        setValue("facilities", matchedFacilities);
+
+        const parsed = parseSchedulingData(selectedOwner);
+        setScheduleItems(parsed.scheduleItems);
+        setIsEverydaySchedule(parsed.isEveryday);
+      }
+    }
+  }, [
+    selectedOwner,
+    isFacilitiesLoading,
+    isClubTypesLoading,
+    serviceNames,
+    clubTypes,
+    facilityNames,
+    facilities,
+    setValue,
+  ]);
 
   const handleOpenScheduleModal = () => {
     setDraftSchedule(JSON.parse(JSON.stringify(scheduleItems)));
@@ -439,7 +599,9 @@ const EditClubRequest = () => {
     }
   };
 
-  return loading ? (
+  const isPageLoading = loading || isFacilitiesLoading || isClubTypesLoading;
+
+  return isPageLoading ? (
     <div className="flex justify-center items-center h-full p-6 bg-white rounded-xl w-full">
       <ActivityIndicator size={80} />
     </div>
@@ -582,34 +744,47 @@ const EditClubRequest = () => {
           control={control}
           render={({ field }) => (
             <div className="grid grid-cols-4 gap-y-4 mt-3">
-              {ALL_SERVICES.map((service) => {
-                const checked = field.value.includes(service);
+              {serviceNames.length === 0 ? (
+                <span className="text-sm text-secondary-text col-span-4">
+                  No club types available
+                </span>
+              ) : (
+                serviceNames.map((service) => {
+                  const checked = (field.value || []).some(
+                    (s: string) =>
+                      s.trim().toLowerCase() === service.trim().toLowerCase(),
+                  );
 
-                return (
-                  <label
-                    key={service}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => {
-                        if (checked) {
-                          field.onChange(
-                            field.value.filter((s: string) => s !== service),
-                          );
-                        } else {
-                          field.onChange([...field.value, service]);
-                        }
-                      }}
-                      className="accent-red-500 w-6 h-6"
-                    />
-                    <span className="text-sm text-secondary-text">
-                      {service}
-                    </span>
-                  </label>
-                );
-              })}
+                  return (
+                    <label
+                      key={service}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          if (checked) {
+                            field.onChange(
+                              (field.value || []).filter(
+                                (s: string) =>
+                                  s.trim().toLowerCase() !==
+                                  service.trim().toLowerCase(),
+                              ),
+                            );
+                          } else {
+                            field.onChange([...(field.value || []), service]);
+                          }
+                        }}
+                        className="accent-red-500 w-6 h-6"
+                      />
+                      <span className="text-sm text-secondary-text">
+                        {service}
+                      </span>
+                    </label>
+                  );
+                })
+              )}
             </div>
           )}
         />
@@ -623,34 +798,47 @@ const EditClubRequest = () => {
           control={control}
           render={({ field }) => (
             <div className="grid grid-cols-4 gap-y-4 mt-3">
-              {ALL_FACILITIES.map((facility) => {
-                const checked = field.value.includes(facility);
+              {facilityNames.length === 0 ? (
+                <span className="text-sm text-secondary-text col-span-4">
+                  No facilities available
+                </span>
+              ) : (
+                facilityNames.map((facility) => {
+                  const checked = (field.value || []).some(
+                    (f: string) =>
+                      f.trim().toLowerCase() === facility.trim().toLowerCase(),
+                  );
 
-                return (
-                  <label
-                    key={facility}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => {
-                        if (checked) {
-                          field.onChange(
-                            field.value.filter((f: string) => f !== facility),
-                          );
-                        } else {
-                          field.onChange([...field.value, facility]);
-                        }
-                      }}
-                      className="accent-red-500 w-6 h-6"
-                    />
-                    <span className="text-sm text-secondary-text">
-                      {facility}
-                    </span>
-                  </label>
-                );
-              })}
+                  return (
+                    <label
+                      key={facility}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          if (checked) {
+                            field.onChange(
+                              (field.value || []).filter(
+                                (f: string) =>
+                                  f.trim().toLowerCase() !==
+                                  facility.trim().toLowerCase(),
+                              ),
+                            );
+                          } else {
+                            field.onChange([...(field.value || []), facility]);
+                          }
+                        }}
+                        className="accent-red-500 w-6 h-6"
+                      />
+                      <span className="text-sm text-secondary-text">
+                        {facility}
+                      </span>
+                    </label>
+                  );
+                })
+              )}
             </div>
           )}
         />

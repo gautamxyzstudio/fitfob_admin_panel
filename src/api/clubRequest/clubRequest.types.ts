@@ -1,6 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+export interface ClubOwnerActivityLog {
+  id?: string | number;
+  createdAt: string;
+  description: string;
+  entityName: string;
+  actionType: string;
+  clubOwnerDocumentId: string;
+}
+
 export interface ClubResponse {
   id: number;
+  documentId?: string;
   publishedAt: string | null;
   createdAt: string;
   ownerName: string;

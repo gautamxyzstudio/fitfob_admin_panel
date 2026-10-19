@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  getClientActivityLogsApi,
+  getClientCheckinsApi,
   getClientDetailApi,
   getClientListApi,
   updateClientDetailApi,
 } from "../../api/client/clientApi";
 import type {
+  ClientActivityLog,
+  ClientCheckin,
   ClientDetailResponse,
   ClientListItem,
   UpdateClientPayload,
@@ -103,3 +107,45 @@ export const useUpdateClient = () => {
     isUpdating: mutation.isPending,
   };
 };
+
+/**
+ * Hook to fetch client activity logs by documentId
+ */
+export const useClientActivityLogs = (documentId?: string) => {
+  const { data, isLoading, isFetching, error, refetch } = useQuery<
+    ClientActivityLog[]
+  >({
+    queryKey: ["clientActivityLogs", documentId],
+    queryFn: () => getClientActivityLogsApi(documentId || ""),
+    enabled: Boolean(documentId),
+  });
+
+  return {
+    activityLogs: data || [],
+    loading: isLoading || isFetching,
+    error: error ? (error as Error).message : null,
+    refetch,
+  };
+};
+
+/**
+ * Hook to fetch client check-ins
+ */
+export const useClientCheckins = () => {
+  const { data, isLoading, isFetching, error, refetch } = useQuery<
+    ClientCheckin[]
+  >({
+    queryKey: ["clientCheckins"],
+    queryFn: getClientCheckinsApi,
+    retry: 1,
+  });
+
+  return {
+    checkins: data || [],
+    loading: isLoading || isFetching,
+    error: error ? (error as Error).message : null,
+    refetch,
+  };
+};
+
+

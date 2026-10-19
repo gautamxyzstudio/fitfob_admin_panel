@@ -11,6 +11,7 @@ import {
   formatFileSize,
   formatTimeRange,
   formatTo12Hour,
+  getMediaUrl,
   getTimeShort,
   parseSchedulingData,
   type ScheduleItem,
@@ -533,11 +534,7 @@ const EditClubRequest = () => {
     setSnackBar("Schedule updated! Click Save to apply changes.", "success");
   };
 
-  const logo = selectedOwner?.logo
-    ? selectedOwner.logo.formats
-      ? selectedOwner.logo.formats.thumbnail?.url
-      : selectedOwner.logo.url
-    : ICONS.DummyClubProfile;
+  const logo = getMediaUrl(selectedOwner?.logo, ICONS.DummyClubProfile);
 
   const time = getTimeShort(selectedOwner?.createdAt || "");
 

@@ -564,3 +564,20 @@ export const formatFileSize = (bytes: number) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 };
+
+/**
+ * Safely extracts image URL from Strapi media object (supports root url, formats: small, thumbnail, medium, large, or raw string)
+ */
+export const getMediaUrl = (media: any, fallback: string = ""): string => {
+  if (!media) return fallback;
+  if (typeof media === "string") return media;
+  return (
+    media.url ||
+    media.formats?.small?.url ||
+    media.formats?.thumbnail?.url ||
+    media.formats?.medium?.url ||
+    media.formats?.large?.url ||
+    fallback
+  );
+};
+

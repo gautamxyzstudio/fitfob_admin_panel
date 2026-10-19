@@ -23,7 +23,8 @@ import ClubTypesPage from "../pages/appSettings/ClubTypesPage";
 import UserList from "../pages/users/UserList";
 import UserDetail from "../pages/users/UserDetail";
 import EditUser from "../pages/users/EditUser";
-
+import Profile from "../pages/profile/Profile";
+ 
 const ProtectedRoute = () => {
   const location = useLocation();
   if (!localStorage.getItem("user")) {
@@ -60,7 +61,7 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/settings" element={<div>Settings Page</div>} />
-        <Route path="/profile" element={<div>Profile Page</div>} />
+        <Route path="/profile" element={<Profile />} />
         {/* <Route path="/club-request" element={<ClubRequest />} />
         <Route path="/view-club-request/:id" element={<ViewClubRequest />} /> */}
         {/* <Route path="/clubs" element={<ClubList />} /> */}

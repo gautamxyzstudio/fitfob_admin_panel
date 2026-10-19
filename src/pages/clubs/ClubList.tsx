@@ -9,6 +9,7 @@ import { Box } from "@mui/material";
 import { ICONS } from "../../assets/exports";
 import { useNavigate } from "react-router";
 import { useVerifiedOwners } from "../../hooks/clubOwner/useClubOwner";
+import { getMediaUrl } from "../../utility/utili";
 
 const ClubList = () => {
   const navigate = useNavigate();
@@ -23,15 +24,14 @@ const ClubList = () => {
       headerName: "Club Name",
       width: 180,
       renderCell: (params) => {
-        const logoSrc = params.row.logo
-          ? params.row.logo
-          : ICONS.DummyClubProfile;
-        const styles = params.row.logo ? "" : "p-2";
+        const logoUrl = getMediaUrl(params.row.logo, ICONS.DummyClubProfile);
+        const styles = logoUrl !== ICONS.DummyClubProfile ? "object-cover" : "p-2";
         return (
           <div className="flex flex-row gap-x-2.5 items-center">
             <img
               className={`w-10.5 h-10.5 ${styles} rounded-md bg-bg group-hover:bg-white`}
-              src={logoSrc}
+              src={logoUrl}
+              alt={params.row.clubName || "Club"}
             />
             <span className="text-base">{params.row.clubName}</span>
           </div>

@@ -22,6 +22,8 @@ export const EndPoints = {
     `${BASE_URL}/api/revoke-approval/verification-rejected/${userId}`,
   updatePendingClubOwner: (ownerId: number) =>
     `${BASE_URL}/api/pending-club-owner/${ownerId}`,
+  clubOwnerActivityLogs: (documentId: string) =>
+    `${BASE_URL}/api/club-owner-activity-logs?documentId=${documentId}`,
 
   // Club Facilities
   clubFacilities: `${BASE_URL}/api/club-facilities`,
@@ -40,4 +42,15 @@ export const EndPoints = {
   clientDetails: `${BASE_URL}/api/client-details`,
   clientDetailByDocId: (docId: string) =>
     `${BASE_URL}/api/client-details/${docId}`,
+  clientActivityLogs: (documentId: string) =>
+    `${BASE_URL}/api/client-activity-logs?documentId=${documentId}`,
+
+  // Check-ins
+  clientCheckins: `${BASE_URL}/api/client-checkins`,
+
+  // Push Notifications
+  toggleSendNotifications: (documentId: string) =>
+    `${BASE_URL}/api/toggle-send-noyifications/${documentId}`,
 };
+
+

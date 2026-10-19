@@ -71,6 +71,13 @@ export const ICONS = {
   UserFill,
 };
 
+import GymBanner from "./gym_banner.jpg";
+import CheckIn3D from "./checkin_empty_3d.jpg";
+import FitfobBanner from "./fitfob_banner.jpg";
+
 export const IMAGES = {
   DummyPROFILE,
+  GymBanner,
+  CheckIn3D,
+  FitfobBanner,
 };

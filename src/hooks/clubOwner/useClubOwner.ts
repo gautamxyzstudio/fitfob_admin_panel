@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  getClubOwnerActivityLogsApi,
   getClubOwnerById,
   rejectApproval,
+  toggleSendNotificationsApi,
   unverifiedOwnersApi,
   updateClubOwner,
   verifiedOwnersApi,
@@ -10,6 +12,7 @@ import {
 } from "../../api/clubRequest/clubRequestApi";
 import type {
   ClubListResponse,
+  ClubOwnerActivityLog,
   ClubResponse,
 } from "../../api/clubRequest/clubRequest.types";
 
@@ -138,3 +141,42 @@ export const useRejectApproval = () => {
     error: mutation.error ? (mutation.error as Error).message : null,
   };
 };
+
+// 🔹 Fetch Club Owner Activity Logs by documentId (useQuery)
+export const useClubOwnerActivityLogs = (documentId?: string) => {
+  const { data, isLoading, isFetching, error, refetch } = useQuery<
+    ClubOwnerActivityLog[]
+  >({
+    queryKey: ["clubOwnerActivityLogs", documentId],
+    queryFn: () => getClubOwnerActivityLogsApi(documentId || ""),
+    enabled: Boolean(documentId),
+  });
+
+  return {
+    activityLogs: data || [],
+    loading: isLoading || isFetching,
+    error: error ? (error as Error).message : null,
+    refetch,
+  };
+};
+
+// 🔹 Toggle Send Push Notifications Mutation Hook
+export const useToggleSendNotifications = () => {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (documentId: string) => toggleSendNotificationsApi(documentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clubOwnerDetails"] });
+      queryClient.invalidateQueries({ queryKey: ["verifiedOwners"] });
+      queryClient.invalidateQueries({ queryKey: ["unverifiedOwners"] });
+      queryClient.invalidateQueries({ queryKey: ["clientDetail"] });
+    },
+  });
+
+  return {
+    toggleSendNotifications: mutation.mutateAsync,
+    isToggling: mutation.isPending,
+  };
+};
+

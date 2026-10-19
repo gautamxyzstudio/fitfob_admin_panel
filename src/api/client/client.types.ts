@@ -146,3 +146,13 @@ export interface UpdateClientPayload {
   status?: string;
   isActive?: boolean;
 }
+
+export interface ClientActivityLog {
+  id?: string | number;
+  clientDocumentId: string;
+  entityName: string;
+  actionType: string;
+  description: string;
+  createdAt: string;
+}
+

@@ -3,7 +3,11 @@ import axios from "axios";
 import { EndPoints } from "../endpoints";
 import api from "../apiInstance";
 import { useAuthStore } from "../../store/auth.store";
-import type { ClubListResponse, ClubResponse } from "./clubRequest.types";
+import type {
+  ClubListResponse,
+  ClubOwnerActivityLog,
+  ClubResponse,
+} from "./clubRequest.types";
 
 export const unverifiedOwnersApi = async (
   search: string,
@@ -175,3 +179,81 @@ export const updateClubOwner = async (
     throw new Error("An unexpected error occurred");
   }
 };
+
+export const getClubOwnerActivityLogsApi = async (
+  documentId: string,
+): Promise<ClubOwnerActivityLog[]> => {
+  const { token } = useAuthStore.getState();
+  try {
+    const response = await api.get(EndPoints.clubOwnerActivityLogs(documentId), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data || [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data?.error?.message || "Failed to fetch activity logs",
+      );
+    }
+    throw new Error("An unexpected error occurred");
+  }
+};
+
+/**
+ * Toggle push notifications for club owner / user
+ * PUT/POST /api/toggle-send-noyifications/:documentId
+ */
+export const toggleSendNotificationsApi = async (
+  documentId: string,
+): Promise<{
+  message: string;
+  data: any;
+}> => {
+  const { token } = useAuthStore.getState();
+  const headers = { Authorization: `Bearer ${token}` };
+
+  try {
+    const response = await api.put(
+      EndPoints.toggleSendNotifications(documentId),
+      {},
+      { headers },
+    );
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 405 || error.response?.status === 404) {
+      try {
+        const postRes = await api.post(
+          EndPoints.toggleSendNotifications(documentId),
+          {},
+          { headers },
+        );
+        return postRes.data;
+      } catch (postErr: any) {
+        if (postErr.response?.status === 404) {
+          const fallbackUrl = EndPoints.toggleSendNotifications(
+            documentId,
+          ).replace("toggle-send-noyifications", "toggle-send-notifications");
+          try {
+            const putRes = await api.put(fallbackUrl, {}, { headers });
+            return putRes.data;
+          } catch {
+            const postRes2 = await api.post(fallbackUrl, {}, { headers });
+            return postRes2.data;
+          }
+        }
+        throw postErr;
+      }
+    }
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data?.error?.message ||
+          error.response?.data?.message ||
+          "Failed to toggle push notifications",
+      );
+    }
+    throw error;
+  }
+};
+

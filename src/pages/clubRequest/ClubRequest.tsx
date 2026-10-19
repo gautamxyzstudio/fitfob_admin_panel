@@ -11,7 +11,7 @@ import {
   Visibility,
 } from "@mui/icons-material";
 import { Box, Menu, MenuItem } from "@mui/material";
-import { getTimeShort } from "../../utility/utili";
+import { getTimeShort, getMediaUrl } from "../../utility/utili";
 import { ICONS } from "../../assets/exports";
 import { useNavigate } from "react-router";
 import { useUnverifiedOwners } from "../../hooks/clubOwner/useClubOwner";
@@ -47,15 +47,14 @@ const ClubRequest = () => {
       headerName: "Club Name",
       width: 200,
       renderCell: (params) => {
-        const logoSrc = params.row.logo
-          ? params.row.logo
-          : ICONS.DummyClubProfile;
-        const styles = params.row.logo ? "" : "p-2";
+        const logoUrl = getMediaUrl(params.row.logo, ICONS.DummyClubProfile);
+        const styles = logoUrl !== ICONS.DummyClubProfile ? "object-cover" : "p-2";
         return (
           <div className="flex flex-row gap-x-2.5 items-center">
             <img
               className={`w-10.5 h-10.5 ${styles} rounded-md bg-bg group-hover:bg-white`}
-              src={logoSrc}
+              src={logoUrl}
+              alt={params.row.clubName || "Club"}
             />
             <span className="text-base">{params.row.clubName}</span>
           </div>

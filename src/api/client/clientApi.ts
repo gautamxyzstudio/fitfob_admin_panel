@@ -4,6 +4,8 @@ import { EndPoints } from "../endpoints";
 import api from "../apiInstance";
 import { useAuthStore } from "../../store/auth.store";
 import type {
+  ClientActivityLog,
+  ClientCheckin,
   ClientDetailResponse,
   ClientListItem,
   UpdateClientPayload,
@@ -101,3 +103,59 @@ export const updateClientDetailApi = async (
     throw new Error("An unexpected error occurred while updating client details");
   }
 };
+
+/**
+ * Fetch client activity logs by documentId
+ * GET /api/client-activity-logs?documentId={documentId}
+ */
+export const getClientActivityLogsApi = async (
+  documentId: string,
+): Promise<ClientActivityLog[]> => {
+  try {
+    const response = await api.get(EndPoints.clientActivityLogs(documentId), {
+      headers: getAuthHeaders(),
+    });
+
+    const data = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+      ? response.data.data
+      : [];
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data?.error?.message ||
+          error.response?.data?.message ||
+          "Failed to fetch client activity logs",
+      );
+    }
+    throw new Error(
+      "An unexpected error occurred while fetching client activity logs",
+    );
+  }
+};
+
+/**
+ * Fetch client check-ins
+ * GET /api/client-checkins
+ */
+export const getClientCheckinsApi = async (): Promise<ClientCheckin[]> => {
+  try {
+    const response = await api.get(EndPoints.clientCheckins, {
+      headers: getAuthHeaders(),
+    });
+
+    const data = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+      ? response.data.data
+      : [];
+    return data;
+  } catch (error) {
+    console.warn("Could not fetch client check-ins", error);
+    return [];
+  }
+};
+
+

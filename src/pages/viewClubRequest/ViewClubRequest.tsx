@@ -1,20 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import {
   useClubOwnerDetails,
   useVerifyApproval,
   useRejectApproval,
+  useToggleSendNotifications,
 } from "../../hooks/clubOwner/useClubOwner";
 import CustomBox from "../../components/atoms/customBox/CustomBox";
 import { ICONS } from "../../assets/exports";
 import ActivityIndicator from "../../components/atoms/activityIndicator/ActivityIndicator";
 import {
   formatFileSize,
+  getMediaUrl,
   getTimeShort,
   parseSchedulingData,
 } from "../../utility/utili";
-import { Dialog, Menu, MenuItem } from "@mui/material";
-import { useState } from "react";
+import { Dialog, Menu, MenuItem, Switch } from "@mui/material";
+import { useState, useEffect } from "react";
 import { useUIStore } from "../../store/ui.store";
 import useSnackBarStore from "../../store/snackBar.store";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 import dayjs from "dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
+import ClubOwnerLogs from "../../components/modules/clubLogs/ClubOwnerLogs";
 
 const PRESET_REJECTION_REASONS = [
   "Invalid or unclear government documents",
@@ -44,7 +46,14 @@ const PRESET_REJECTION_REASONS = [
 const ViewClubRequest = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { selectedOwner, loading } = useClubOwnerDetails(id ? Number(id) : 0);
+
+  // Show update logs only for accepted/approved clubs (not on pending club requests)
+  const isAcceptedClub =
+    selectedOwner?.user?.verification_status === "approved" ||
+    selectedOwner?.user?.verification_status === "verified" ||
+    location.pathname.startsWith("/clubs");
   const { verifyApproval: approveClub } = useVerifyApproval();
   const { rejectApproval: rejectClub } = useRejectApproval();
   const [openModal, setOpenModal] = useState(false);
@@ -67,11 +76,50 @@ const ViewClubRequest = () => {
     useState<ClubOwnerDocument | null>(null);
   const [showAllDocuments, setShowAllDocuments] = useState(false);
 
-  const logo = selectedOwner?.logo
-    ? selectedOwner.logo.formats
-      ? selectedOwner.logo.formats.thumbnail?.url
-      : selectedOwner.logo.url
-    : ICONS.DummyClubProfile;
+  // Push Notifications Toggle state & handler
+  const { toggleSendNotifications, isToggling: isTogglingNotifications } =
+    useToggleSendNotifications();
+  const [sendNotifications, setSendNotifications] = useState(false);
+
+  useEffect(() => {
+    if (selectedOwner) {
+      setSendNotifications(Boolean(selectedOwner.sendNotifications));
+    }
+  }, [selectedOwner]);
+
+  const handleToggleNotification = async () => {
+    const docId = selectedOwner?.documentId;
+    if (!docId) {
+      setSnackBar("Document ID not found for this club", "error");
+      return;
+    }
+    const previousState = sendNotifications;
+    setSendNotifications(!previousState);
+    try {
+      const res = await toggleSendNotifications(docId);
+      const isNowActive =
+        res.data?.sendNotifications !== undefined
+          ? res.data.sendNotifications
+          : !previousState;
+      setSendNotifications(isNowActive);
+      setSnackBar(
+        res.message ||
+          (isNowActive
+            ? "Notifications enabled successfully"
+            : "Notifications disabled successfully"),
+        "success",
+      );
+    } catch (err: any) {
+      setSendNotifications(previousState);
+      setSnackBar(
+        err.message || "Failed to update notification setting",
+        "error",
+      );
+    }
+  };
+
+
+  const logo = getMediaUrl(selectedOwner?.logo, ICONS.DummyClubProfile);
 
   const time = getTimeShort(selectedOwner?.createdAt || "");
   const schedulingData = parseSchedulingData(selectedOwner);
@@ -224,42 +272,94 @@ const ViewClubRequest = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-row gap-x-3">
-            <button
-              onClick={() => console.log("Chat")}
-              className="bg-red w-12 h-12 rounded p-2.5 items-center cursor-pointer "
-            >
-              <img src={ICONS.Chat} className="w-full h-full" />
-            </button>
-            <button
-              onClick={() => {
-                if (selectedOwner?.user?.verification_status === "approved") {
-                  navigate(`/clubs/edit/${selectedOwner?.id}`);
-                } else {
-                  navigate(`/club-request/edit/${selectedOwner?.id}`);
-                }
-              }}
-              className="bg-background w-12 h-12 rounded p-2.5 items-center cursor-pointer "
-            >
-              <img src={ICONS.Edit} className="w-full h-full" />
-            </button>
-            {selectedOwner?.currentStep === 6 &&
-              selectedOwner?.user?.verification_status === "pending" && (
-                <>
-                  <button
-                    onClick={() => handleAccept(selectedOwner?.user.id)}
-                    className="bg-[#22C55E] w-auto h-12 rounded px-7.5 text-center text-white font-bold text-base cursor-pointer "
-                  >
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => setOpenRejectModal(true)}
-                    className="bg-background  w-auto h-12 rounded px-7.5 text-center text-secondary-text font-bold text-base cursor-pointer "
-                  >
-                    Decline
-                  </button>
-                </>
-              )}
+          <div className="flex flex-col items-end gap-y-2.5">
+            {/* Push Notifications Toggle - ONLY shown for accepted / approved clubs */}
+            {isAcceptedClub && (
+              <div className="flex items-center gap-x-3.5 px-3.5 py-1.5 rounded-xl border border-divider bg-background shadow-xs">
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-semibold text-black leading-tight">
+                    Push Notifications
+                  </span>
+                  <span className="text-[11px] font-medium mt-0.5">
+                    {sendNotifications ? (
+                      <span className="text-green font-semibold">Active</span>
+                    ) : (
+                      <span className="text-secondary-text">Disabled</span>
+                    )}
+                  </span>
+                </div>
+                <Switch
+                  checked={sendNotifications}
+                  disabled={isTogglingNotifications}
+                  onChange={handleToggleNotification}
+                  sx={{
+                    width: 50,
+                    height: 28,
+                    padding: 0,
+                    display: "flex",
+                    "& .MuiSwitch-switchBase": {
+                      padding: "3px",
+                      "&.Mui-checked": {
+                        transform: "translateX(22px)",
+                        color: "#fff",
+                        "& + .MuiSwitch-track": {
+                          backgroundColor: "#e23744 !important",
+                          opacity: 1,
+                        },
+                      },
+                    },
+                    "& .MuiSwitch-thumb": {
+                      width: 22,
+                      height: 22,
+                      boxShadow: "0 2px 4px 0 rgba(0, 0, 0, 0.15)",
+                    },
+                    "& .MuiSwitch-track": {
+                      borderRadius: 14,
+                      backgroundColor: "#D1D5DB",
+                      opacity: 1,
+                    },
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="flex flex-row gap-x-3 items-center">
+              <button
+                onClick={() => console.log("Chat")}
+                className="bg-red w-12 h-12 rounded p-2.5 items-center cursor-pointer "
+              >
+                <img src={ICONS.Chat} className="w-full h-full" />
+              </button>
+              <button
+                onClick={() => {
+                  if (selectedOwner?.user?.verification_status === "approved") {
+                    navigate(`/clubs/edit/${selectedOwner?.id}`);
+                  } else {
+                    navigate(`/club-request/edit/${selectedOwner?.id}`);
+                  }
+                }}
+                className="bg-background w-12 h-12 rounded p-2.5 items-center cursor-pointer "
+              >
+                <img src={ICONS.Edit} className="w-full h-full" />
+              </button>
+              {selectedOwner?.currentStep === 6 &&
+                selectedOwner?.user?.verification_status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => handleAccept(selectedOwner?.user.id)}
+                      className="bg-[#22C55E] w-auto h-12 rounded px-7.5 text-center text-white font-bold text-base cursor-pointer "
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => setOpenRejectModal(true)}
+                      className="bg-background  w-auto h-12 rounded px-7.5 text-center text-secondary-text font-bold text-base cursor-pointer "
+                    >
+                      Decline
+                    </button>
+                  </>
+                )}
+            </div>
           </div>
         </div>
       </CustomBox>
@@ -396,6 +496,9 @@ const ViewClubRequest = () => {
           </div>
         )}
       </CustomBox>
+      
+      {/* Club Owner Action Logs - Only shown when request is accepted/approved */}
+      {isAcceptedClub && <ClubOwnerLogs owner={selectedOwner} />}
 
       {/* Verified Modal */}
       <Dialog

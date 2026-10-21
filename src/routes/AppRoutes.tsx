@@ -20,6 +20,7 @@ import { useAuthStore } from "../store/auth.store";
 import EditClubRequest from "../pages/editClubRequest/EditClubRequest";
 import FacilitiesPage from "../pages/appSettings/FacilitiesPage";
 import ClubTypesPage from "../pages/appSettings/ClubTypesPage";
+import GeminiKeyPage from "../pages/appSettings/GeminiKeyPage";
 import UserList from "../pages/users/UserList";
 import UserDetail from "../pages/users/UserDetail";
 import EditUser from "../pages/users/EditUser";
@@ -92,6 +93,7 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="facilities" replace />} />
           <Route path="facilities" element={<FacilitiesPage />} />
           <Route path="club-types" element={<ClubTypesPage />} />
+          <Route path="gemini-key" element={<GeminiKeyPage />} />
         </Route>
       </Route>
     </Routes>

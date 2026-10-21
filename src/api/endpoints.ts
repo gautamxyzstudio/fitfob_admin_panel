@@ -51,6 +51,9 @@ export const EndPoints = {
   // Push Notifications
   toggleSendNotifications: (documentId: string) =>
     `${BASE_URL}/api/toggle-send-noyifications/${documentId}`,
+
+  // Gemini API Key
+  geminiKey: `${BASE_URL}/api/gemini-api-key`,
 };
 
 

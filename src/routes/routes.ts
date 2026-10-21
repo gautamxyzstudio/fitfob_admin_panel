@@ -67,6 +67,11 @@ export const routes = [
         key: "clubTypes",
         route: "/app/club-types",
       },
+      {
+        name: "Gemini Key",
+        key: "geminiKey",
+        route: "/app/gemini-key",
+      },
     ],
   },
 ];

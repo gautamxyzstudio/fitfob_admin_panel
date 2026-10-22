@@ -39,7 +39,6 @@ const GeminiIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
 const GeminiKeyPage: React.FC = () => {
   const {
     geminiKeyData,
-    isLoading,
     isFetching,
     refetch,
     updateGeminiKey,

@@ -11,6 +11,8 @@ import {
   formatFileSize,
   formatTimeRange,
   formatTo12Hour,
+  getClubPhotoUrl,
+  getDocumentDetails,
   getMediaUrl,
   getTimeShort,
   parseSchedulingData,
@@ -492,14 +494,14 @@ const EditClubRequest = () => {
         setValue("clubCategory", selectedOwner.clubCategory);
 
         const matchedServices = matchOwnerItems(
-          selectedOwner.services,
+          selectedOwner.services || selectedOwner.club_services,
           serviceNames,
           clubTypes,
         );
         setValue("services", matchedServices);
 
         const matchedFacilities = matchOwnerItems(
-          selectedOwner.facilities,
+          selectedOwner.facilities || selectedOwner.club_facilities,
           facilityNames,
           facilities,
         );
@@ -855,7 +857,7 @@ const EditClubRequest = () => {
             />
           )}
         </div>
-        {selectedOwner?.club_photos === null ? (
+        {!selectedOwner?.club_photos || selectedOwner.club_photos.length === 0 ? (
           <div className="mt-6 text-center text-xl font-bold">
             No Club Photo Available
           </div>
@@ -865,12 +867,12 @@ const EditClubRequest = () => {
           >
             {selectedOwner?.club_photos.map((item, idx) => (
               <div
-                key={idx}
+                key={item.documentId || item.id || idx}
                 onClick={() => setSelectedPhotoIndex(idx)}
                 className="relative group cursor-pointer overflow-hidden rounded-xl shadow-[0_1px_12px_0_rgba(174,174,174,0.71)]"
               >
                 <img
-                  src={item?.images[0]?.url}
+                  src={getClubPhotoUrl(item)}
                   alt={item?.imageInfo}
                   className="w-42 h-33 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -898,7 +900,7 @@ const EditClubRequest = () => {
               />
             )}
         </div>
-        {selectedOwner?.club_owner_documents.length === 0 ? (
+        {!selectedOwner?.club_owner_documents || selectedOwner.club_owner_documents.length === 0 ? (
           <div className="my-6 text-center text-xl font-bold">
             No Documents Available
           </div>
@@ -906,16 +908,26 @@ const EditClubRequest = () => {
           <div
             className={`mt-3 flex flex-row w-full flex-wrap gap-4 ${(selectedOwner?.club_owner_documents?.length ?? 0) >= 3 ? "justify-between" : "justify-start"}`}
           >
-            {selectedOwner?.club_owner_documents.map((item) => (
-              <FileCard
-                key={item.id}
-                fileName={item.documentName + (item.File?.ext || "")}
-                uploadDate={item.publishedAt || item.createdAt || ""}
-                fileSize={item.File?.size || 0}
-                onClick={() => setSelectedDocument(item)}
-                onMenuClick={() => setSelectedDocument(item)}
-              />
-            ))}
+            {selectedOwner?.club_owner_documents.map((item, idx) => {
+              const docInfo = getDocumentDetails(item);
+              const displayName =
+                docInfo.name +
+                (docInfo.ext && !docInfo.name.toLowerCase().endsWith(docInfo.ext.toLowerCase())
+                  ? docInfo.ext
+                  : "");
+              const uploadDate =
+                item.publishedAt || item.createdAt || selectedOwner?.createdAt || "";
+              return (
+                <FileCard
+                  key={item.documentId || item.id || idx}
+                  fileName={displayName}
+                  uploadDate={uploadDate}
+                  fileSize={docInfo.size}
+                  onClick={() => setSelectedDocument(item)}
+                  onMenuClick={() => setSelectedDocument(item)}
+                />
+              );
+            })}
           </div>
         )}
       </CustomBox>
@@ -936,80 +948,85 @@ const EditClubRequest = () => {
           },
         }}
       >
-        {selectedPhotoIndex !== null && selectedOwner?.club_photos && (
-          <div className="flex flex-col w-full max-w-4xl p-4">
-            <div className="flex flex-row justify-between items-center pb-3 border-b border-gray-700 mb-4">
-              <div className="flex flex-col">
-                <span className="font-semibold text-lg text-white">
-                  {selectedOwner.club_photos[selectedPhotoIndex]?.imageInfo ||
-                    `Photo ${selectedPhotoIndex + 1}`}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {selectedPhotoIndex + 1} of {selectedOwner.club_photos.length}
-                </span>
+        {selectedPhotoIndex !== null && selectedOwner?.club_photos && (() => {
+          const clubPhotos = selectedOwner.club_photos;
+          const totalPhotos = clubPhotos.length;
+          const currentPhoto = clubPhotos[selectedPhotoIndex];
+
+          return (
+            <div className="flex flex-col w-full max-w-4xl p-4">
+              <div className="flex flex-row justify-between items-center pb-3 border-b border-gray-700 mb-4">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-lg text-white">
+                    {currentPhoto?.imageInfo ||
+                      `Photo ${selectedPhotoIndex + 1}`}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {selectedPhotoIndex + 1} of {totalPhotos}
+                  </span>
+                </div>
+                <div className="flex items-center gap-x-2">
+                  <a
+                    href={getClubPhotoUrl(currentPhoto)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2 hover:bg-gray-800 rounded-full transition-colors text-gray-300 hover:text-white"
+                    title="Open Original"
+                  >
+                    <ExternalLink size={20} />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPhotoIndex(null)}
+                    className="p-2 hover:bg-gray-800 rounded-full transition-colors text-gray-300 hover:text-white cursor-pointer"
+                  >
+                    <X size={22} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-x-2">
-                <a
-                  href={selectedOwner.club_photos[selectedPhotoIndex]?.images[0]?.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-2 hover:bg-gray-800 rounded-full transition-colors text-gray-300 hover:text-white"
-                  title="Open Original"
-                >
-                  <ExternalLink size={20} />
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPhotoIndex(null)}
-                  className="p-2 hover:bg-gray-800 rounded-full transition-colors text-gray-300 hover:text-white cursor-pointer"
-                >
-                  <X size={22} />
-                </button>
+
+              <div className="relative flex items-center justify-center min-h-75 max-h-[70vh]">
+                {totalPhotos > 1 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedPhotoIndex((prev) =>
+                        prev !== null
+                          ? (prev - 1 + totalPhotos) % totalPhotos
+                          : 0,
+                      )
+                    }
+                    className="absolute left-2 z-10 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer"
+                  >
+                    <ChevronLeft size={28} />
+                  </button>
+                )}
+
+                <img
+                  src={getClubPhotoUrl(currentPhoto)}
+                  alt={currentPhoto?.imageInfo}
+                  className="max-h-[65vh] max-w-full object-contain rounded-lg shadow-2xl"
+                />
+
+                {totalPhotos > 1 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedPhotoIndex((prev) =>
+                        prev !== null
+                          ? (prev + 1) % totalPhotos
+                          : 0,
+                      )
+                    }
+                    className="absolute right-2 z-10 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer"
+                  >
+                    <ChevronRight size={28} />
+                  </button>
+                )}
               </div>
             </div>
-
-            <div className="relative flex items-center justify-center min-h-75 max-h-[70vh]">
-              {selectedOwner.club_photos.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedPhotoIndex((prev) =>
-                      prev !== null
-                        ? (prev - 1 + selectedOwner.club_photos.length) %
-                        selectedOwner.club_photos.length
-                        : 0,
-                    )
-                  }
-                  className="absolute left-2 z-10 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer"
-                >
-                  <ChevronLeft size={28} />
-                </button>
-              )}
-
-              <img
-                src={selectedOwner.club_photos[selectedPhotoIndex]?.images[0]?.url}
-                alt={selectedOwner.club_photos[selectedPhotoIndex]?.imageInfo}
-                className="max-h-[65vh] max-w-full object-contain rounded-lg shadow-2xl"
-              />
-
-              {selectedOwner.club_photos.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedPhotoIndex((prev) =>
-                      prev !== null
-                        ? (prev + 1) % selectedOwner.club_photos.length
-                        : 0,
-                    )
-                  }
-                  className="absolute right-2 z-10 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer"
-                >
-                  <ChevronRight size={28} />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </Dialog>
 
       {/* All Photos Gallery Modal */}
@@ -1040,7 +1057,7 @@ const EditClubRequest = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[70vh] overflow-y-auto p-1">
           {selectedOwner?.club_photos?.map((item, idx) => (
             <div
-              key={idx}
+              key={item.documentId || item.id || idx}
               onClick={() => {
                 setShowAllPhotos(false);
                 setSelectedPhotoIndex(idx);
@@ -1048,7 +1065,7 @@ const EditClubRequest = () => {
               className="relative group cursor-pointer overflow-hidden rounded-xl border border-gray-200 shadow-sm"
             >
               <img
-                src={item?.images[0]?.url}
+                src={getClubPhotoUrl(item)}
                 alt={item?.imageInfo}
                 className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -1073,86 +1090,94 @@ const EditClubRequest = () => {
           },
         }}
       >
-        {selectedDocument && (
-          <div className="flex flex-col w-full">
-            <div className="flex justify-between items-center border-b pb-3 mb-4 border-gray-200">
-              <div className="flex flex-col">
-                <h2 className="text-lg font-bold text-black truncate max-w-md">
-                  {selectedDocument.documentName}
-                  {selectedDocument.File?.ext || ""}
-                </h2>
-                <span className="text-xs text-secondary-text">
-                  Uploaded:{" "}
-                  {dayjs(
-                    selectedDocument.publishedAt || selectedDocument.createdAt,
-                  ).format("MMMM DD, YYYY")}{" "}
-                  | {formatFileSize(selectedDocument.File?.size || 0)}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedDocument(null)}
-                className="p-1.5 hover:bg-gray-100 rounded-full transition cursor-pointer"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
-            </div>
+        {selectedDocument && (() => {
+          const docInfo = getDocumentDetails(selectedDocument);
+          const displayName =
+            docInfo.name +
+            (docInfo.ext && !docInfo.name.toLowerCase().endsWith(docInfo.ext.toLowerCase())
+              ? docInfo.ext
+              : "");
+          const uploadDate =
+            selectedDocument.publishedAt ||
+            selectedDocument.createdAt ||
+            selectedOwner?.createdAt ||
+            "";
 
-            <div className="w-full min-h-75 max-h-[60vh] overflow-auto flex items-center justify-center bg-gray-50 rounded-xl p-4 border border-gray-200">
-              {selectedDocument.File?.mime?.startsWith("image/") ||
-                [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"].includes(
-                  selectedDocument.File?.ext?.toLowerCase() || "",
-                ) ? (
-                <img
-                  src={selectedDocument.File.url}
-                  alt={selectedDocument.documentName}
-                  className="max-h-[55vh] max-w-full object-contain rounded-md"
-                />
-              ) : selectedDocument.File?.mime === "application/pdf" ||
-                selectedDocument.File?.ext?.toLowerCase() === ".pdf" ? (
-                <iframe
-                  src={selectedDocument.File.url}
-                  title={selectedDocument.documentName}
-                  className="w-full h-[55vh] rounded-md border-0"
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-y-3 py-10">
-                  <div className="w-16 h-16 rounded-full bg-lightRed flex items-center justify-center p-3">
-                    <img src={ICONS.Doc} alt="doc" className="w-full h-full" />
-                  </div>
-                  <span className="text-sm font-medium text-black">
-                    {selectedDocument.documentName}
-                    {selectedDocument.File?.ext || ""}
-                  </span>
+          return (
+            <div className="flex flex-col w-full">
+              <div className="flex justify-between items-center border-b pb-3 mb-4 border-gray-200">
+                <div className="flex flex-col">
+                  <h2 className="text-lg font-bold text-black truncate max-w-md">
+                    {displayName}
+                  </h2>
                   <span className="text-xs text-secondary-text">
-                    Preview not directly supported in-browser for this format.
+                    Uploaded:{" "}
+                    {uploadDate && dayjs(uploadDate).isValid()
+                      ? dayjs(uploadDate).format("MMMM DD, YYYY")
+                      : "Recently"}{" "}
+                    {docInfo.size > 0 && `| ${formatFileSize(docInfo.size)}`}
                   </span>
                 </div>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDocument(null)}
+                  className="p-1.5 hover:bg-gray-100 rounded-full transition cursor-pointer"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
 
-            <div className="flex flex-row justify-end gap-x-3 mt-5">
-              <CustomButton
-                type="button"
-                label="Close"
-                buttonStyle="secondary"
-                onClick={() => setSelectedDocument(null)}
-              />
-              <a
-                href={selectedDocument.File?.url}
-                target="_blank"
-                rel="noreferrer"
-                className="no-underline"
-              >
+              <div className="w-full min-h-75 max-h-[60vh] overflow-auto flex items-center justify-center bg-gray-50 rounded-xl p-4 border border-gray-200">
+                {docInfo.isImage ? (
+                  <img
+                    src={docInfo.url}
+                    alt={docInfo.name}
+                    className="max-h-[55vh] max-w-full object-contain rounded-md"
+                  />
+                ) : docInfo.isPdf ? (
+                  <iframe
+                    src={docInfo.url}
+                    title={docInfo.name}
+                    className="w-full h-[55vh] rounded-md border-0"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-y-3 py-10">
+                    <div className="w-16 h-16 rounded-full bg-lightRed flex items-center justify-center p-3">
+                      <img src={ICONS.Doc} alt="doc" className="w-full h-full" />
+                    </div>
+                    <span className="text-sm font-medium text-black">
+                      {displayName}
+                    </span>
+                    <span className="text-xs text-secondary-text">
+                      Preview not directly supported in-browser for this format.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-row justify-end gap-x-3 mt-5">
                 <CustomButton
                   type="button"
-                  label="Open / Download"
-                  buttonStyle="primary"
+                  label="Close"
+                  buttonStyle="secondary"
+                  onClick={() => setSelectedDocument(null)}
                 />
-              </a>
+                <a
+                  href={docInfo.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="no-underline"
+                >
+                  <CustomButton
+                    type="button"
+                    label="Open / Download"
+                    buttonStyle="primary"
+                  />
+                </a>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </Dialog>
 
       {/* All Documents Gallery Modal */}
@@ -1181,58 +1206,68 @@ const EditClubRequest = () => {
           </button>
         </div>
         <div className="flex flex-col gap-3 max-h-[65vh] overflow-y-auto p-1">
-          {selectedOwner?.club_owner_documents.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => {
-                setShowAllDocuments(false);
-                setSelectedDocument(item);
-              }}
-              className="flex flex-row items-center justify-between p-3 rounded-xl border border-divider hover:border-primary hover:shadow-sm transition-all cursor-pointer bg-white"
-            >
-              <div className="flex items-center gap-x-3">
-                <div className="w-10 h-10 rounded-lg bg-lightRed flex items-center justify-center p-2">
-                  <img src={ICONS.Doc} alt="doc" className="w-full h-full" />
+          {selectedOwner?.club_owner_documents?.map((item, idx) => {
+            const docInfo = getDocumentDetails(item);
+            const displayName =
+              docInfo.name +
+              (docInfo.ext && !docInfo.name.toLowerCase().endsWith(docInfo.ext.toLowerCase())
+                ? docInfo.ext
+                : "");
+            const uploadDate =
+              item.publishedAt || item.createdAt || selectedOwner?.createdAt || "";
+
+            return (
+              <div
+                key={item.documentId || item.id || idx}
+                onClick={() => {
+                  setShowAllDocuments(false);
+                  setSelectedDocument(item);
+                }}
+                className="flex flex-row items-center justify-between p-3 rounded-xl border border-divider hover:border-primary hover:shadow-sm transition-all cursor-pointer bg-white"
+              >
+                <div className="flex items-center gap-x-3">
+                  <div className="w-10 h-10 rounded-lg bg-lightRed flex items-center justify-center p-2">
+                    <img src={ICONS.Doc} alt="doc" className="w-full h-full" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-black">
+                      {displayName}
+                    </span>
+                    <span className="text-xs text-secondary-text">
+                      Uploaded:{" "}
+                      {uploadDate && dayjs(uploadDate).isValid()
+                        ? dayjs(uploadDate).format("MMMM DD, YYYY")
+                        : "Recently"}{" "}
+                      {docInfo.size > 0 && `| ${formatFileSize(docInfo.size)}`}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-black">
-                    {item.documentName}
-                    {item.File?.ext || ""}
-                  </span>
-                  <span className="text-xs text-secondary-text">
-                    Uploaded:{" "}
-                    {dayjs(item.publishedAt || item.createdAt).format(
-                      "MMMM DD, YYYY",
-                    )}{" "}
-                    | {formatFileSize(item.File?.size || 0)}
-                  </span>
+                <div className="flex items-center gap-x-2">
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-md bg-background text-xs font-semibold text-primary hover:bg-primary/10 transition cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAllDocuments(false);
+                      setSelectedDocument(item);
+                    }}
+                  >
+                    Preview
+                  </button>
+                  <a
+                    href={docInfo.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 rounded-md hover:bg-gray-100 text-gray-500 transition"
+                    title="Open in new tab"
+                  >
+                    <ExternalLink size={18} />
+                  </a>
                 </div>
               </div>
-              <div className="flex items-center gap-x-2">
-                <button
-                  type="button"
-                  className="px-3 py-1.5 rounded-md bg-background text-xs font-semibold text-primary hover:bg-primary/10 transition cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAllDocuments(false);
-                    setSelectedDocument(item);
-                  }}
-                >
-                  Preview
-                </button>
-                <a
-                  href={item.File?.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-1.5 rounded-md hover:bg-gray-100 text-gray-500 transition"
-                  title="Open in new tab"
-                >
-                  <ExternalLink size={18} />
-                </a>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Dialog>
 

@@ -8,6 +8,15 @@ export interface ClubOwnerActivityLog {
   clubOwnerDocumentId: string;
 }
 
+export interface ClubPhotoItem {
+  id?: number | string;
+  documentId?: string;
+  imageInfo?: string;
+  url?: string;
+  images?: MediaFile[];
+  [key: string]: any;
+}
+
 export interface ClubResponse {
   id: number;
   documentId?: string;
@@ -19,30 +28,31 @@ export interface ClubResponse {
   clubName: string;
   clubCategory: string;
   clubId: string;
-  openingTime: string;
-  closingTime: string;
-  weekday: string;
-  weekend: string;
+  openingTime?: string;
+  closingTime?: string;
+  weekday?: string;
+  weekend?: string;
   weekdayScheduling?: SchedulingMap | string | null;
   weekendScheduling?: SchedulingMap | string | null;
   scheduling?: SchedulingMap | string | null;
   everyday?: ScheduleDayTiming | string | null;
 
-  facilities: string[];
-  services: string[];
-  latitude: string;
-  longitude: string;
-  clubAddress: string;
-  pincode: string;
-  city: string;
-  state: string;
-  user: User;
-  logo: MediaFile | null;
-  club_photos: {
-    imageInfo: string;
-    images: MediaFile[];
-  }[];
-  club_owner_documents: ClubOwnerDocument[];
+  facilities?: string[];
+  services?: string[];
+  club_facilities?: any[];
+  club_services?: any[];
+  latitude?: string;
+  longitude?: string;
+  clubAddress?: string;
+  pincode?: string;
+  city?: string;
+  state?: string;
+  user?: User;
+  logo?: MediaFile | string | null;
+  club_photos?: ClubPhotoItem[];
+  club_owner_documents?: ClubOwnerDocument[];
+  currentStep?: number;
+  sendNotifications?: boolean;
   
   [key: string]: any;
 }
@@ -98,12 +108,15 @@ export interface MediaFormat {
 }
 
 export interface ClubOwnerDocument {
-  id: number;
+  id?: number;
+  documentId?: string;
   documentName: string;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string | null;
-  File: MediaFile;
+  fileUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string | null;
+  File?: MediaFile;
+  [key: string]: any;
 }
 
 export type ClubListResponse = ClubResponse[];

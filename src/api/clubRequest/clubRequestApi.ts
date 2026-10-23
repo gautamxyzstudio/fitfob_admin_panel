@@ -60,7 +60,7 @@ export const getClubOwnerById = async (
       },
     });
     if (response.data) {
-      return response.data;
+      return response.data?.data ? response.data.data : response.data;
     }
   } catch (error) {
     // If not a 404, rethrow error. If 404, proceed to pending fallback below.
@@ -80,7 +80,9 @@ export const getClubOwnerById = async (
         },
       },
     );
-    return pendingResponse.data;
+    return pendingResponse.data?.data
+      ? pendingResponse.data.data
+      : pendingResponse.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(
@@ -148,7 +150,7 @@ export const updateClubOwner = async (
     });
 
     if (response.data) {
-      return response.data;
+      return response.data?.data ? response.data.data : response.data;
     }
   } catch (error) {
     // If not a 404, rethrow error. If 404, proceed to pending fallback below.
@@ -169,7 +171,9 @@ export const updateClubOwner = async (
         },
       },
     );
-    return pendingResponse.data;
+    return pendingResponse.data?.data
+      ? pendingResponse.data.data
+      : pendingResponse.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(

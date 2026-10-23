@@ -557,11 +557,12 @@ export const parseSchedulingData = (owner: any): ParsedScheduling => {
 };
 
 
-export const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return "0 Bytes";
+export const formatFileSize = (bytes?: number) => {
+  if (!bytes || bytes <= 0 || isNaN(bytes)) return "";
   const k = 1024;
-  const sizes = ["KB", "MB", "GB"];
+  const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+  if (i === 0) return `${bytes} Bytes`;
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 };
 
@@ -579,5 +580,96 @@ export const getMediaUrl = (media: any, fallback: string = ""): string => {
     media.formats?.large?.url ||
     fallback
   );
+};
+
+/**
+ * Safely extracts club photo URL from direct S3 object or Strapi media object
+ */
+export const getClubPhotoUrl = (photo: any, fallback: string = ""): string => {
+  if (!photo) return fallback;
+  if (typeof photo === "string") return photo;
+  if (photo.url && typeof photo.url === "string") return photo.url;
+  if (Array.isArray(photo.images) && photo.images[0]) {
+    return getMediaUrl(photo.images[0], fallback);
+  }
+  if (photo.image) {
+    return getMediaUrl(photo.image, fallback);
+  }
+  return fallback;
+};
+
+export interface ExtractedDocumentDetails {
+  url: string;
+  name: string;
+  ext: string;
+  mime: string;
+  size: number;
+  isImage: boolean;
+  isPdf: boolean;
+}
+
+/**
+ * Safely extracts document information from new direct S3 format or old Strapi upload format
+ */
+export const getDocumentDetails = (doc: any): ExtractedDocumentDetails => {
+  if (!doc) {
+    return {
+      url: "",
+      name: "Document",
+      ext: "",
+      mime: "",
+      size: 0,
+      isImage: false,
+      isPdf: false,
+    };
+  }
+
+  const url = doc.fileUrl || doc.url || doc.File?.url || "";
+  let ext = (doc.File?.ext || "").toLowerCase();
+  if (!ext && url) {
+    const cleanUrl = url.split("?")[0];
+    const parts = cleanUrl.split(".");
+    if (parts.length > 1) {
+      ext = `.${parts.pop()?.toLowerCase()}`;
+    }
+  }
+
+  const mime = (doc.File?.mime || "").toLowerCase();
+  const name =
+    doc.documentName ||
+    doc.name ||
+    doc.File?.name ||
+    (url ? url.split("/").pop()?.split("?")[0] : "Document");
+  const size = doc.File?.size || doc.fileSize || doc.size || 0;
+
+  const isPdf =
+    mime === "application/pdf" ||
+    ext === ".pdf" ||
+    url.toLowerCase().includes(".pdf");
+
+  const imageExtensions = [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".gif",
+    ".svg",
+    ".bmp",
+    ".avif",
+  ];
+  const isImage =
+    mime.startsWith("image/") ||
+    imageExtensions.includes(ext) ||
+    imageExtensions.some((e) => url.toLowerCase().includes(e));
+
+  return {
+    url,
+    name,
+    ext,
+    mime,
+    size: typeof size === "number" ? size : 0,
+    isImage,
+    isPdf,
+  };
 };
 

@@ -40,8 +40,10 @@ export const FileCard = ({
             {fileName}
           </span>
           <span className="text-[10px] leading-3.5 text-black">
-            {dayjs(uploadDate).format("MMMM DD, YYYY")} |{" "}
-            {formatFileSize(fileSize)}
+            {uploadDate && dayjs(uploadDate).isValid()
+              ? dayjs(uploadDate).format("MMMM DD, YYYY")
+              : "Uploaded Document"}
+            {fileSize && fileSize > 0 ? ` | ${formatFileSize(fileSize)}` : ""}
           </span>
         </div>
       </div>

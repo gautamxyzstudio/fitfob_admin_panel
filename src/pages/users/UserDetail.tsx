@@ -1,12 +1,8 @@
-import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import CustomBox from "../../components/atoms/customBox/CustomBox";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
 import ActivityIndicator from "../../components/atoms/activityIndicator/ActivityIndicator";
 import { useClientDetail } from "../../hooks/client/useClient";
-import { useToggleSendNotifications } from "../../hooks/clubOwner/useClubOwner";
-import useSnackBarStore from "../../store/snackBar.store";
-import { Switch } from "@mui/material";
 import { IMAGES } from "../../assets/exports";
 import dayjs from "dayjs";
 import {
@@ -20,46 +16,6 @@ const UserDetail = () => {
   const { docId } = useParams<{ docId: string }>();
   const navigate = useNavigate();
   const { client, loading } = useClientDetail(docId);
-  const { toggleSendNotifications, isToggling: isTogglingNotification } =
-    useToggleSendNotifications();
-  const { setSnackBar } = useSnackBarStore();
-  const [sendNotifications, setSendNotifications] = useState(false);
-
-  useEffect(() => {
-    if (client) {
-      setSendNotifications(Boolean((client as any).sendNotifications));
-    }
-  }, [client]);
-
-  const handleToggleNotification = async () => {
-    if (!docId) {
-      setSnackBar("User document ID not found", "error");
-      return;
-    }
-    const previousState = sendNotifications;
-    setSendNotifications(!previousState);
-    try {
-      const res = await toggleSendNotifications(docId);
-      const isNowActive =
-        res.data?.sendNotifications !== undefined
-          ? res.data.sendNotifications
-          : !previousState;
-      setSendNotifications(isNowActive);
-      setSnackBar(
-        res.message ||
-          (isNowActive
-            ? "Notifications enabled successfully"
-            : "Notifications disabled successfully"),
-        "success",
-      );
-    } catch (err: any) {
-      setSendNotifications(previousState);
-      setSnackBar(
-        err.message || "Failed to update notification setting",
-        "error",
-      );
-    }
-  };
 
 
   if (loading) {
@@ -199,54 +155,6 @@ const UserDetail = () => {
         </div>
 
         <div className="flex items-center gap-x-3.5">
-          {/* Push Notification Toggle */}
-          <div className="flex items-center gap-x-3.5 px-4 h-12 rounded-xl border border-divider bg-bg shadow-xs">
-            <div className="flex flex-col text-left">
-              <span className="text-sm font-semibold text-black leading-tight">
-                Push Notifications
-              </span>
-              <span className="text-xs font-medium mt-0.5">
-                {sendNotifications ? (
-                  <span className="text-green font-semibold">Active</span>
-                ) : (
-                  <span className="text-secondary-text">Disabled</span>
-                )}
-              </span>
-            </div>
-            <Switch
-              checked={sendNotifications}
-              disabled={isTogglingNotification}
-              onChange={handleToggleNotification}
-              sx={{
-                width: 50,
-                height: 28,
-                padding: 0,
-                display: "flex",
-                "& .MuiSwitch-switchBase": {
-                  padding: "3px",
-                  "&.Mui-checked": {
-                    transform: "translateX(22px)",
-                    color: "#fff",
-                    "& + .MuiSwitch-track": {
-                      backgroundColor: "#e23744 !important",
-                      opacity: 1,
-                    },
-                  },
-                },
-                "& .MuiSwitch-thumb": {
-                  width: 22,
-                  height: 22,
-                  boxShadow: "0 2px 4px 0 rgba(0, 0, 0, 0.15)",
-                },
-                "& .MuiSwitch-track": {
-                  borderRadius: 14,
-                  backgroundColor: "#D1D5DB",
-                  opacity: 1,
-                },
-              }}
-            />
-          </div>
-
           <CustomButton
             buttonStyle="white"
             label="Edit"

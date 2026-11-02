@@ -21,6 +21,8 @@ import EditClubRequest from "../pages/editClubRequest/EditClubRequest";
 import FacilitiesPage from "../pages/appSettings/FacilitiesPage";
 import ClubTypesPage from "../pages/appSettings/ClubTypesPage";
 import GeminiKeyPage from "../pages/appSettings/GeminiKeyPage";
+import MasterPricingPage from "../pages/appSettings/MasterPricingPage";
+import GymContractPage from "../pages/clubs/GymContractPage";
 import UserList from "../pages/users/UserList";
 import UserDetail from "../pages/users/UserDetail";
 import EditUser from "../pages/users/EditUser";
@@ -87,6 +89,8 @@ const AppRoutes = () => {
           <Route index element={<ClubList />} />
           <Route path="view/:id" element={<ViewClubRequest />} />
           <Route path="edit/:id" element={<EditClubRequest />} />
+          <Route path="contract/:id" element={<GymContractPage />} />
+          <Route path="commissions/:id" element={<GymContractPage />} />
         </Route>
 
         <Route path="/app">
@@ -94,6 +98,7 @@ const AppRoutes = () => {
           <Route path="facilities" element={<FacilitiesPage />} />
           <Route path="club-types" element={<ClubTypesPage />} />
           <Route path="gemini-key" element={<GeminiKeyPage />} />
+          <Route path="master-pricing" element={<MasterPricingPage />} />
         </Route>
       </Route>
     </Routes>

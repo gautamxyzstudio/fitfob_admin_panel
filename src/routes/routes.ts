@@ -72,6 +72,11 @@ export const routes = [
         key: "geminiKey",
         route: "/app/gemini-key",
       },
+      {
+        name: "Master Pricing",
+        key: "masterPricing",
+        route: "/app/master-pricing",
+      },
     ],
   },
 ];

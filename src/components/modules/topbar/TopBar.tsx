@@ -1,20 +1,40 @@
 import { Logout, Notifications, Person, Settings } from "@mui/icons-material";
 import CustomBox from "../../atoms/customBox/CustomBox";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { ICONS, IMAGES } from "../../../assets/exports";
 import DrawerNotification from "../drawerNotification/DrawerNotification";
 import { useState } from "react";
 import { InputAdornment, TextField } from "@mui/material";
 
+const getPageTitle = (pathname: string): string => {
+  if (pathname === "/app/master-pricing") return "Master Pricing";
+  if (pathname === "/app/facilities") return "Facilities";
+  if (pathname === "/app/club-types") return "Club Types";
+  if (pathname === "/app/gemini-key") return "Gemini Key";
+  if (pathname.startsWith("/app")) return "App Settings";
+  if (pathname.startsWith("/club-request")) return "Club Request";
+  if (pathname.startsWith("/clubs")) return "Clubs";
+  if (pathname.startsWith("/users")) return "Users";
+  if (pathname.startsWith("/earnings")) return "Earnings";
+  if (pathname.startsWith("/check-in")) return "Check In";
+  if (pathname.startsWith("/payouts")) return "Payouts";
+  if (pathname === "/profile") return "Profile";
+  if (pathname === "/settings") return "Settings";
+  return "Dashboard";
+};
+
 const TopBar = () => {
   const [openNotification, setOpenNotification] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const title = getPageTitle(location.pathname);
 
   return (
     <div className="w-full flex flex-row gap-x-3 sticky top-0 z-99">
       <CustomBox customClasses="w-[79%] rounded-2xl pl-5 p-1.5 flex items-center justify-between shadow">
-        <Link to={"/"}>
-          <h2 className="text-black font-medium text-base">Dashboard</h2>
+        <Link to={location.pathname}>
+          <h2 className="text-black font-semibold text-base">{title}</h2>
         </Link>
         <TextField
           variant="outlined"
@@ -37,12 +57,17 @@ const TopBar = () => {
           }}
         />
       </CustomBox>
-      <img
-        onClick={() => setOpenNotification(true)}
-        src={ICONS.Notification}
-        alt="notification"
-        className="cursor-pointer w-16 h-16 p-4 bg-white rounded-2xl"
-      />
+      <div className="relative">
+        <img
+          onClick={() => setOpenNotification(true)}
+          src={ICONS.Notification}
+          alt="notification"
+          className="cursor-pointer w-16 h-16 p-4 bg-white rounded-2xl"
+        />
+        <span className="absolute top-2.5 right-2.5 bg-primary text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center pointer-events-none">
+          01
+        </span>
+      </div>
       <img
         onClick={() => navigate("/settings")}
         src={ICONS.Setting}

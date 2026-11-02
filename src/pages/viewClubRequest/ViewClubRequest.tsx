@@ -30,11 +30,16 @@ import {
   ChevronRight,
   ExternalLink,
   Eye,
+  FileText,
   X,
 } from "lucide-react";
 import dayjs from "dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
 import ClubOwnerLogs from "../../components/modules/clubLogs/ClubOwnerLogs";
+import GymContractModal, {
+  getInitialGymContract,
+  type GymContractData,
+} from "../../components/modules/gymContract/GymContractModal";
 
 const PRESET_REJECTION_REASONS = [
   "Invalid or unclear government documents",
@@ -82,6 +87,18 @@ const ViewClubRequest = () => {
   const { toggleSendNotifications, isToggling: isTogglingNotifications } =
     useToggleSendNotifications();
   const [sendNotifications, setSendNotifications] = useState(false);
+
+  // Gym Contract & Commission Modal state
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [contractData, setContractData] = useState<GymContractData>(() =>
+    getInitialGymContract(selectedOwner?.id || id)
+  );
+
+  useEffect(() => {
+    if (selectedOwner?.id || id) {
+      setContractData(getInitialGymContract(selectedOwner?.id || id));
+    }
+  }, [selectedOwner?.id, id]);
 
   useEffect(() => {
     if (selectedOwner) {
@@ -365,6 +382,50 @@ const ViewClubRequest = () => {
           </div>
         </div>
       </CustomBox>
+
+      {/* Gym Contract & Commission Quick-Access Card - ONLY for approved clubs */}
+      {isAcceptedClub && (
+        <CustomBox customClasses="p-4 px-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-red-100/70 bg-linear-to-r from-red-50/25 via-white to-white">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-red-100/80 text-primary flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 stroke-[2]" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm sm:text-base font-bold text-[#1C1C1C]">
+                  Gym Contract & Commissions
+                </h3>
+                <span className="bg-[#FEE2E2] text-primary text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">
+                  {contractData.assignedTier} Tier
+                </span>
+                {contractData.zeroCommissionDeal ? (
+                  <span className="bg-[#DCFCE7] text-[#15803D] text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                    Zero-Comm Active ({contractData.zeroCommissionLimit} Users)
+                  </span>
+                ) : (
+                  <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                    Standard Commission
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#787571] mt-0.5">
+                Monthly: ₹{contractData.commissions.monthly ?? 300} comm | Bi-Annually: ₹{contractData.commissions.biAnnually ?? 500} comm | Annually: ₹{contractData.commissions.annually ?? 800} comm
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setContractModalOpen(true)}
+            className="bg-primary hover:bg-[#c82333] active:scale-[0.98] text-white px-4 py-2.5 rounded-xl font-medium text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-end sm:self-center"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>View & Edit Contract</span>
+          </button>
+        </CustomBox>
+      )}
+
       {/* Club Information */}
       <CustomBox customClasses="p-4">
         <h2 className="text-lg font-medium">Club Information</h2>
@@ -1066,6 +1127,16 @@ const ViewClubRequest = () => {
           })}
         </div>
       </Dialog>
+
+      {/* Gym Contract & Commissions Configurator Modal */}
+      <GymContractModal
+        open={contractModalOpen}
+        onClose={() => setContractModalOpen(false)}
+        clubId={selectedOwner?.id || id}
+        clubName={selectedOwner?.clubName || "Gold's Gym"}
+        city={selectedOwner?.city || "Mohali"}
+        onSaveSuccess={(newData) => setContractData(newData)}
+      />
     </div>
   );
 };

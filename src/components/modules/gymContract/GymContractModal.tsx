@@ -230,7 +230,7 @@ const GymContractModal: React.FC<GymContractModalProps> = ({
         <div className="w-full flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div className="flex flex-col gap-y-1">
             <h2 className="text-xl sm:text-2xl font-bold text-[#1C1C1C] tracking-tight">
-              Gym Contract: fitfob
+              Gym Contract: {displayName}
             </h2>
             <p className="text-xs sm:text-sm text-[#787571] max-w-2xl leading-relaxed">
               Assign the category tier (this locks customer prices) and set the negotiated Fitfob commission

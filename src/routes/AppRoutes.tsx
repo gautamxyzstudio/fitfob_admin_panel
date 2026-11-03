@@ -27,6 +27,7 @@ import UserList from "../pages/users/UserList";
 import UserDetail from "../pages/users/UserDetail";
 import EditUser from "../pages/users/EditUser";
 import Profile from "../pages/profile/Profile";
+import NotFound from "../pages/notFound/NotFound";
  
 const ProtectedRoute = () => {
   const location = useLocation();
@@ -59,6 +60,7 @@ const AppRoutes = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/verify-otp" element={<VerifyOtp />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/404" element={<NotFound />} />
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
@@ -101,6 +103,9 @@ const AppRoutes = () => {
           <Route path="master-pricing" element={<MasterPricingPage />} />
         </Route>
       </Route>
+
+      {/* Catch-all 404 Route */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };

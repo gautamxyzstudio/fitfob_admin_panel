@@ -74,10 +74,12 @@ export const ICONS = {
 import GymBanner from "./gym_banner.jpg";
 import CheckIn3D from "./checkin_empty_3d.jpg";
 import FitfobBanner from "./fitfob_banner.jpg";
+import NotFound404 from "./notFound404.png";
 
 export const IMAGES = {
   DummyPROFILE,
   GymBanner,
   CheckIn3D,
   FitfobBanner,
+  NotFound404,
 };

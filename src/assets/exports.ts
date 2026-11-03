@@ -75,6 +75,7 @@ import GymBanner from "./gym_banner.jpg";
 import CheckIn3D from "./checkin_empty_3d.jpg";
 import FitfobBanner from "./fitfob_banner.jpg";
 import NotFound404 from "./notFound404.png";
+import NoData from "./noData.png";
 
 export const IMAGES = {
   DummyPROFILE,
@@ -82,4 +83,5 @@ export const IMAGES = {
   CheckIn3D,
   FitfobBanner,
   NotFound404,
+  NoData,
 };

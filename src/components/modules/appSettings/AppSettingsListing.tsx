@@ -8,6 +8,7 @@ import type {
 } from "../../../api/appSettings/appSettings.types";
 import useSnackBarStore from "../../../store/snackBar.store";
 import { Plus, SquarePen, Trash2, Image as ImageIcon } from "lucide-react";
+import { IMAGES } from "../../../assets/exports";
 
 interface AppSettingsListingProps {
   title: string;
@@ -212,13 +213,17 @@ const AppSettingsListing: React.FC<AppSettingsListingProps> = ({
             ) : items.length === 0 ? (
               // Empty State
               <tr>
-                <td colSpan={4} className="py-16 text-center text-gray-400">
-                  <div className="flex flex-col items-center justify-center gap-y-2">
-                    <ImageIcon className="w-10 h-10 text-gray-300" />
-                    <p className="text-sm font-medium text-gray-500">
+                <td colSpan={4} className="py-12 text-center text-gray-400">
+                  <div className="flex flex-col items-center justify-center">
+                    <img
+                      src={IMAGES.NoData}
+                      alt="No Data"
+                      className="w-32 h-auto object-contain select-none pointer-events-none mb-3 animate-in fade-in duration-200"
+                    />
+                    <p className="text-base font-bold text-[#1C1C1C]">
                       No {title.toLowerCase()} found
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-400 mt-1">
                       Click "+ Add New" to add your first {nameLabel.toLowerCase()}
                     </p>
                   </div>

@@ -28,6 +28,11 @@ import UserDetail from "../pages/users/UserDetail";
 import EditUser from "../pages/users/EditUser";
 import Profile from "../pages/profile/Profile";
 import NotFound from "../pages/notFound/NotFound";
+import DashboardNotFound from "../pages/notFound/DashboardNotFound";
+import EarningsPage from "../pages/earnings/EarningsPage";
+import CheckInPage from "../pages/checkIn/CheckInPage";
+import PayoutsPage from "../pages/payouts/PayoutsPage";
+import SettingsPage from "../pages/settings/SettingsPage";
  
 const ProtectedRoute = () => {
   const location = useLocation();
@@ -65,7 +70,7 @@ const AppRoutes = () => {
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/settings" element={<div>Settings Page</div>} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<Profile />} />
         {/* <Route path="/club-request" element={<ClubRequest />} />
         <Route path="/view-club-request/:id" element={<ViewClubRequest />} /> */}
@@ -75,9 +80,9 @@ const AppRoutes = () => {
           <Route path="view/:docId" element={<UserDetail />} />
           <Route path="edit/:docId" element={<EditUser />} />
         </Route>
-        <Route path="/earnings" element={<div>Earnings Page</div>} />
-        <Route path="/check-in" element={<div>Check In Page</div>} />
-        <Route path="/payouts" element={<div>Payouts Page</div>} />
+        <Route path="/earnings" element={<EarningsPage />} />
+        <Route path="/check-in" element={<CheckInPage />} />
+        <Route path="/payouts" element={<PayoutsPage />} />
 
         {/* Nested /app */}
 
@@ -102,6 +107,9 @@ const AppRoutes = () => {
           <Route path="gemini-key" element={<GeminiKeyPage />} />
           <Route path="master-pricing" element={<MasterPricingPage />} />
         </Route>
+
+        <Route path="/not-found" element={<DashboardNotFound />} />
+        <Route path="*" element={<DashboardNotFound />} />
       </Route>
 
       {/* Catch-all 404 Route */}

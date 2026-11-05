@@ -68,6 +68,7 @@ const CustomDataTable: React.FC<ICustomDataTableProps> = ({
       fontWeight: 400,
       fontFamily: '"Plus Jakarta Sans", sans-serif',
       color: "#1C1C1C",
+      textTransform: "capitalize",
     };
   }, []);
 
@@ -79,6 +80,7 @@ const CustomDataTable: React.FC<ICustomDataTableProps> = ({
       fontWeight: 400,
       border: 0,
       fontFamily: '"Plus Jakarta Sans", sans-serif',
+      textTransform: "capitalize",
     };
   }, []);
 

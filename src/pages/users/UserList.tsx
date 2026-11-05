@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useMemo } from "react";
 import CustomDataTable from "../../components/atoms/customDataTable/CustomDataTable";
 import type { GridColDef } from "@mui/x-data-grid";
@@ -66,11 +67,11 @@ const UserList = () => {
     },
     {
       field: "email",
-      headerName: "User Id",
+      headerName: "Email Id",
       width: 220,
       renderCell: (params) => {
         return (
-          <span className="text-sm text-secondary-text">
+          <span className="text-sm text-secondary-text lowercase">
             {params.row.email || "-"}
           </span>
         );

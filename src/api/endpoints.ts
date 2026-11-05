@@ -9,7 +9,7 @@ export const EndPoints = {
   resetPassword: `${BASE_URL}/api/auth/reset-password`,
 
   // Club Request
-  unverifiedClubOwners: (search: string = "",status?: string) =>
+  unverifiedClubOwners: (search: string = "", status?: string) =>
     `${BASE_URL}/api/pending-club-owner/unverified?search=${search}&status=${status}`,
   getPendingClubOwner: (ownerId: number) =>
     `${BASE_URL}/api/pending-club-owner/${ownerId}`,
@@ -54,6 +54,11 @@ export const EndPoints = {
 
   // Gemini API Key
   geminiKey: `${BASE_URL}/api/gemini-api-key`,
+
+  // Membership Plan Prices
+  membershipPlanPrices: `${BASE_URL}/api/membership-plan-prices`,
+
+  // Gym Contract
+  gymContract: (documentId: string) =>
+    `${BASE_URL}/api/gym-contract/${documentId}`,
 };
-
-

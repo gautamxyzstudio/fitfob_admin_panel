@@ -8,7 +8,7 @@ import {
   getGymContractStorageKey,
   getInitialGymContract,
   type GymContractData,
-} from "../../components/modules/gymContract/GymContractModal";
+} from "../../components/modules/gymContract/gymContract.utils";
 
 interface TierGlobalPrices {
   customerPrice: number;

@@ -1,3 +1,5 @@
+/* eslint-disable no-extra-boolean-cast */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useLocation, useNavigate, useParams } from "react-router";
 import {
   useClubOwnerDetails,
@@ -36,10 +38,7 @@ import {
 import dayjs from "dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
 import ClubOwnerLogs from "../../components/modules/clubLogs/ClubOwnerLogs";
-import GymContractModal, {
-  getInitialGymContract,
-  type GymContractData,
-} from "../../components/modules/gymContract/GymContractModal";
+import GymContractModal from "../../components/modules/gymContract/GymContractModal";
 
 const PRESET_REJECTION_REASONS = [
   "Invalid or unclear government documents",
@@ -54,7 +53,7 @@ const ViewClubRequest = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { selectedOwner, loading } = useClubOwnerDetails(id ? Number(id) : 0);
+  const { selectedOwner, loading, refetch } = useClubOwnerDetails(id ? Number(id) : 0);
 
   // Show update logs only for accepted/approved clubs (not on pending club requests)
   const isAcceptedClub =
@@ -90,15 +89,6 @@ const ViewClubRequest = () => {
 
   // Gym Contract & Commission Modal state
   const [contractModalOpen, setContractModalOpen] = useState(false);
-  const [contractData, setContractData] = useState<GymContractData>(() =>
-    getInitialGymContract(selectedOwner?.id || id)
-  );
-
-  useEffect(() => {
-    if (selectedOwner?.id || id) {
-      setContractData(getInitialGymContract(selectedOwner?.id || id));
-    }
-  }, [selectedOwner?.id, id]);
 
   useEffect(() => {
     if (selectedOwner) {
@@ -123,9 +113,9 @@ const ViewClubRequest = () => {
       setSendNotifications(isNowActive);
       setSnackBar(
         res.message ||
-          (isNowActive
-            ? "Notifications enabled successfully"
-            : "Notifications disabled successfully"),
+        (isNowActive
+          ? "Notifications enabled successfully"
+          : "Notifications disabled successfully"),
         "success",
       );
     } catch (err: any) {
@@ -234,6 +224,40 @@ const ViewClubRequest = () => {
 
     return steps[step] ?? steps[0];
   };
+
+  // Safely extract plan commission numbers for display
+  const getPlanCommission = (plan: any, fallback: number): number | string => {
+    if (plan === null || plan === undefined) return fallback;
+    if (typeof plan === "number" || typeof plan === "string") return plan;
+    if (typeof plan === "object") {
+      return (
+        plan.fitfobCommission ??
+        plan.commission ??
+        plan.customCommission ??
+        fallback
+      );
+    }
+    return fallback;
+  };
+
+  const contractPlans = selectedOwner?.gymContractPricing?.plans;
+  const monthlyPlan = Array.isArray(contractPlans)
+    ? contractPlans.find((p: any) => p?.duration === "monthly") || contractPlans[0]
+    : null;
+  const biAnnualPlan = Array.isArray(contractPlans)
+    ? contractPlans.find(
+        (p: any) => p?.duration === "six_months" || p?.duration === "biAnnually",
+      ) || contractPlans[1]
+    : null;
+  const annualPlan = Array.isArray(contractPlans)
+    ? contractPlans.find(
+        (p: any) => p?.duration === "twelve_months" || p?.duration === "annually",
+      ) || contractPlans[2]
+    : null;
+
+  const monthlyComm = getPlanCommission(monthlyPlan, 300);
+  const biAnnualComm = getPlanCommission(biAnnualPlan, 500);
+  const annualComm = getPlanCommission(annualPlan, 800);
 
   return loading ? (
     <div className="flex justify-center items-center h-full p-6 bg-white rounded-xl w-full">
@@ -388,7 +412,7 @@ const ViewClubRequest = () => {
         <CustomBox customClasses="p-4 px-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-red-100/70 bg-linear-to-r from-red-50/25 via-white to-white">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-red-100/80 text-primary flex items-center justify-center shrink-0">
-              <FileText className="w-5 h-5 stroke-[2]" />
+              <FileText className="w-5 h-5 stroke-2" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2 flex-wrap">
@@ -396,12 +420,14 @@ const ViewClubRequest = () => {
                   Gym Contract & Commissions
                 </h3>
                 <span className="bg-[#FEE2E2] text-primary text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">
-                  {contractData.assignedTier} Tier
+                  {selectedOwner?.gymContractPricing?.categoryTier || selectedOwner?.clubCategory || "Premium"} Tier
                 </span>
-                {contractData.zeroCommissionDeal ? (
+                {selectedOwner?.gymContractPricing
+                  ?.zeroCommissionDeal?.enabled ? (
                   <span className="bg-[#DCFCE7] text-[#15803D] text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                    Zero-Comm Active ({contractData.zeroCommissionLimit} Users)
+                    Zero-Comm Active ({selectedOwner?.gymContractPricing
+                      ?.zeroCommissionDeal?.userLimit} Users)
                   </span>
                 ) : (
                   <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-md">
@@ -409,9 +435,10 @@ const ViewClubRequest = () => {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#787571] mt-0.5">
-                Monthly: ₹{contractData.commissions.monthly ?? 300} comm | Bi-Annually: ₹{contractData.commissions.biAnnually ?? 500} comm | Annually: ₹{contractData.commissions.annually ?? 800} comm
-              </p>
+
+              <span className="text-xs text-[#787571] mt-0.5">
+                Monthly: ₹{monthlyComm} comm | Bi-Annually: ₹{biAnnualComm} comm | Annually: ₹{annualComm} comm
+              </span>
             </div>
           </div>
 
@@ -430,7 +457,7 @@ const ViewClubRequest = () => {
       <CustomBox customClasses="p-4">
         <h2 className="text-lg font-medium">Club Information</h2>
         <div className="mt-3 flex flex-row w-full flex-wrap gap-y-3.75">
-          <InfoField label="Owner’s name" value={selectedOwner?.ownerName} />
+          <InfoField label="Owner’s name" value={selectedOwner?.ownerName} customClasses="capitalize" />
           <InfoField label="Email Address" value={selectedOwner?.email} />
           <InfoField label="Id No." value={selectedOwner?.clubId} />
           <InfoField label="Phone Number" value={selectedOwner?.phoneNumber} />
@@ -461,7 +488,7 @@ const ViewClubRequest = () => {
                   className="w-[25%] flex flex-row gap-x-0.5 items-center"
                 >
                   <img src={ICONS.Tick} className="w-6 h-6" />
-                  <span className="text-secondary-text text-sm">{name}</span>
+                  <span className="text-secondary-text text-sm capitalize">{name}</span>
                 </div>
               );
             })
@@ -487,7 +514,7 @@ const ViewClubRequest = () => {
                   className="w-[25%] flex flex-row gap-x-0.5 items-center"
                 >
                   <img src={ICONS.Tick} className="w-6 h-6" />
-                  <span className="text-secondary-text text-sm">{name}</span>
+                  <span className="text-secondary-text text-sm capitalize">{name}</span>
                 </div>
               );
             })
@@ -583,7 +610,7 @@ const ViewClubRequest = () => {
           </div>
         )}
       </CustomBox>
-      
+
       {/* Club Owner Action Logs - Only shown when request is accepted/approved */}
       {isAcceptedClub && <ClubOwnerLogs owner={selectedOwner} />}
 
@@ -661,13 +688,12 @@ const ViewClubRequest = () => {
               <button
                 type="button"
                 onClick={(e) => setReasonAnchorEl(e.currentTarget)}
-                className={`w-full p-3 pr-10 border rounded-lg flex items-center justify-between text-sm bg-white cursor-pointer transition text-left focus:outline-none ${
-                  reasonError && !rejectReasonOption
-                    ? "border-red"
-                    : Boolean(reasonAnchorEl)
-                      ? "border-red ring-1 ring-red"
-                      : "border-divider hover:border-red"
-                }`}
+                className={`w-full p-3 pr-10 border rounded-lg flex items-center justify-between text-sm bg-white cursor-pointer transition text-left focus:outline-none ${reasonError && !rejectReasonOption
+                  ? "border-red"
+                  : Boolean(reasonAnchorEl)
+                    ? "border-red ring-1 ring-red"
+                    : "border-divider hover:border-red"
+                  }`}
               >
                 <span
                   className={
@@ -680,9 +706,8 @@ const ViewClubRequest = () => {
                 </span>
                 <ChevronDown
                   size={18}
-                  className={`text-secondary-text transition-transform duration-200 ${
-                    Boolean(reasonAnchorEl) ? "rotate-180 text-primary" : ""
-                  }`}
+                  className={`text-secondary-text transition-transform duration-200 ${Boolean(reasonAnchorEl) ? "rotate-180 text-primary" : ""
+                    }`}
                 />
               </button>
               <Menu
@@ -773,11 +798,10 @@ const ViewClubRequest = () => {
                   }
                 }}
                 placeholder="Enter rejection reason..."
-                className={`w-full p-3 border rounded-lg resize-none focus:outline-none text-sm text-black ${
-                  reasonError && rejectReasonOption === "Other"
-                    ? "border-red"
-                    : "border-divider focus:border-red"
-                }`}
+                className={`w-full p-3 border rounded-lg resize-none focus:outline-none text-sm text-black ${reasonError && rejectReasonOption === "Other"
+                  ? "border-red"
+                  : "border-divider focus:border-red"
+                  }`}
               />
               {reasonError && rejectReasonOption === "Other" && (
                 <span className="text-xs text-red mt-0.5">{reasonError}</span>
@@ -1132,10 +1156,10 @@ const ViewClubRequest = () => {
       <GymContractModal
         open={contractModalOpen}
         onClose={() => setContractModalOpen(false)}
-        clubId={selectedOwner?.id || id}
+        clubId={selectedOwner?.documentId || id}
         clubName={selectedOwner?.clubName || "Gold's Gym"}
         city={selectedOwner?.city || "Mohali"}
-        onSaveSuccess={(newData) => setContractData(newData)}
+        onSaveSuccess={() => refetch()}
       />
     </div>
   );

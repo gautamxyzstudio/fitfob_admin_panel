@@ -58,5 +58,9 @@
     "typescript-eslint": {
       "eslint": "^9.39.2"
     }
+  },
+  "allowScripts": {
+    "@mui/x-telemetry@8.29.0": true,
+    "esbuild@0.28.2": true
   }
 }

@@ -1,7 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useState } from "react";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
+import {
+  toLocalDate,
+  formatLocalDateTime,
+  formatLocalFromNow,
+} from "../../../utility/dayjs";
 import {
   Clock,
   Filter,
@@ -27,8 +29,6 @@ import ActivityIndicator from "../../atoms/activityIndicator/ActivityIndicator";
 import type { ClientActivityLog } from "../../../api/client/client.types";
 import { useClientActivityLogs } from "../../../hooks/client/useClient";
 
-dayjs.extend(relativeTime);
-
 export interface UserActivityLogsProps {
   docId?: string;
   clientName?: string;
@@ -36,7 +36,7 @@ export interface UserActivityLogsProps {
 }
 
 // Category detection helpers
-export const isCheckinLog = (log: ClientActivityLog): boolean => {
+const isCheckinLog = (log: ClientActivityLog): boolean => {
   const entity = (log.entityName || "").toLowerCase();
   const action = (log.actionType || "").toLowerCase();
   const desc = (log.description || "").toLowerCase();
@@ -51,7 +51,7 @@ export const isCheckinLog = (log: ClientActivityLog): boolean => {
   );
 };
 
-export const isMembershipLog = (log: ClientActivityLog): boolean => {
+const isMembershipLog = (log: ClientActivityLog): boolean => {
   const entity = (log.entityName || "").toLowerCase();
   const action = (log.actionType || "").toLowerCase();
   const desc = (log.description || "").toLowerCase();
@@ -155,7 +155,6 @@ const parseDescriptionDetails = (desc: string) => {
 
 export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
   docId,
-  clientName: _clientName,
   customLogs,
 }) => {
   const documentId = docId || "";
@@ -178,7 +177,8 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
     );
 
     return [...filtered].sort(
-      (a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()
+      (a, b) =>
+        toLocalDate(b.createdAt).valueOf() - toLocalDate(a.createdAt).valueOf()
     );
   }, [customLogs, apiLogs]);
 
@@ -356,14 +356,15 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
         </div>
       ) : viewMode === "timeline" ? (
         /* TIMELINE VIEW */
-        <div className="relative pl-5 sm:pl-7 mt-3 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-[2px] before:bg-divider">
+        <div className="relative pl-5 sm:pl-7 mt-3 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-divider">
           {paginatedLogs.map((log, index) => {
             const badge = getActionBadge(log.actionType);
             const EntityIcon = getEntityIcon(log.entityName);
-            const formattedDate = dayjs(log.createdAt).format(
+            const formattedDate = formatLocalDateTime(
+              log.createdAt,
               "DD MMM YYYY • hh:mm A"
             );
-            const relativeTimeStr = dayjs(log.createdAt).fromNow();
+            const relativeTimeStr = formatLocalFromNow(log.createdAt);
             const parsed = parseDescriptionDetails(log.description);
 
             return (
@@ -416,7 +417,7 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
                       <Clock className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Check-in Time:</span>
                       <strong className="font-semibold text-emerald-900">
-                        {dayjs(log.createdAt).format("hh:mm A, DD MMM YYYY")}
+                        {formatLocalDateTime(log.createdAt, "hh:mm A, DD MMM YYYY")}
                       </strong>
                     </div>
                   )}
@@ -464,23 +465,24 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
       ) : (
         /* TABLE VIEW */
         <div className="mt-3 overflow-x-auto rounded-xl border border-divider">
-          <table className="w-full text-left text-sm min-w-[700px]">
+          <table className="w-full text-left text-sm min-w-175">
             <thead className="bg-bg text-secondary-text font-semibold text-xs uppercase border-b border-divider">
               <tr>
                 <th className="py-3 px-4">Action</th>
                 <th className="py-3 px-4">Entity</th>
-                <th className="py-3 px-4 min-w-[220px]">Description</th>
-                <th className="py-3 px-4 min-w-[160px]">Date & Time</th>
+                <th className="py-3 px-4 min-w-55">Description</th>
+                <th className="py-3 px-4 min-w-40">Date & Time</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-divider bg-white">
               {paginatedLogs.map((log, index) => {
                 const badge = getActionBadge(log.actionType);
                 const EntityIcon = getEntityIcon(log.entityName);
-                const formattedDate = dayjs(log.createdAt).format(
+                const formattedDate = formatLocalDateTime(
+                  log.createdAt,
                   "DD MMM YYYY, hh:mm A"
                 );
-                const relativeTimeStr = dayjs(log.createdAt).fromNow();
+                const relativeTimeStr = formatLocalFromNow(log.createdAt);
 
                 return (
                   <tr
@@ -507,14 +509,14 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
 
                     {/* Description */}
                     <td className="py-3.5 px-4 align-top">
-                      <div className="text-xs font-medium text-black break-words leading-relaxed">
+                      <div className="text-xs font-medium text-black wrap-break-word leading-relaxed">
                         {log.description}
                       </div>
                       {isCheckinLog(log) && (
                         <div className="text-[11px] font-medium text-emerald-700 mt-1 inline-flex items-center gap-1">
                           <Clock className="w-3 h-3 text-emerald-600" /> Check-in:{" "}
                           <strong className="font-semibold">
-                            {dayjs(log.createdAt).format("hh:mm A, DD MMM YYYY")}
+                            {formatLocalDateTime(log.createdAt, "hh:mm A, DD MMM YYYY")}
                           </strong>
                         </div>
                       )}

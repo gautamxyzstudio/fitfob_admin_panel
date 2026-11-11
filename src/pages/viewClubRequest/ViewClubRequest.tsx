@@ -35,7 +35,7 @@ import {
   FileText,
   X,
 } from "lucide-react";
-import dayjs from "dayjs";
+import { formatLocalDate } from "../../utility/dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
 import ClubOwnerLogs from "../../components/modules/clubLogs/ClubOwnerLogs";
 import GymContractModal from "../../components/modules/gymContract/GymContractModal";
@@ -246,18 +246,20 @@ const ViewClubRequest = () => {
     : null;
   const biAnnualPlan = Array.isArray(contractPlans)
     ? contractPlans.find(
-        (p: any) => p?.duration === "six_months" || p?.duration === "biAnnually",
-      ) || contractPlans[1]
+      (p: any) => p?.duration === "six_months" || p?.duration === "biAnnually",
+    ) || contractPlans[1]
     : null;
   const annualPlan = Array.isArray(contractPlans)
     ? contractPlans.find(
-        (p: any) => p?.duration === "twelve_months" || p?.duration === "annually",
-      ) || contractPlans[2]
+      (p: any) => p?.duration === "twelve_months" || p?.duration === "annually",
+    ) || contractPlans[2]
     : null;
 
   const monthlyComm = getPlanCommission(monthlyPlan, 300);
   const biAnnualComm = getPlanCommission(biAnnualPlan, 500);
   const annualComm = getPlanCommission(annualPlan, 800);
+
+  const goBack = useNavigate()
 
   return loading ? (
     <div className="flex justify-center items-center h-full p-6 bg-white rounded-xl w-full">
@@ -268,7 +270,14 @@ const ViewClubRequest = () => {
       {/* Club detail */}
       <CustomBox customClasses="p-4">
         <div className="flex flex-row items-center justify-between w-full">
-          <h2 className="text-lg font-medium">Club Detail</h2>
+          <div className="text-sm font-medium breadcrumbs">
+            <ul>
+              <li onClick={() => goBack(-1)} className="text-primary cursor-pointer hover:underline">
+                Back to List
+              </li>
+              <li>Club Detail</li>
+            </ul>
+          </div>
           {selectedOwner?.currentStep && (
             <span className="text-black text-[16px] leading-5 font-semibold capitalize">
               Current Step:{" "}
@@ -279,7 +288,7 @@ const ViewClubRequest = () => {
           )}
         </div>
 
-        <div className="flex flex-row items-end justify-between w-full mt-4">
+        <div className="flex flex-row items-end justify-between w-full mt-2">
           <div className="flex flex-row gap-x-3 items-center justify-start">
             <img
               src={logo}
@@ -292,14 +301,14 @@ const ViewClubRequest = () => {
                   {selectedOwner?.clubName}
                 </span>
                 <div
-                  className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${selectedOwner?.user?.verification_status === "approved" ? "bg-lightGreen text-green!" : bgColor}`}
+                  className={`relative px-5 py-2 text-xs text-white rounded-[52px] ${selectedOwner?.user?.verification_status === "approved" ? "bg-lightGreen text-green!" : bgColor}`}
                 >
                   {selectedOwner?.user?.verification_status === "approved"
                     ? "Approved"
                     : "Pending"}
                   {selectedOwner?.user?.verification_status === "pending" && (
                     <span
-                      className={`absolute -top-1.5 -right-1.5 bg-white px-2 py-1 rounded-full text-secondary-text border ${borderColor}`}
+                      className={`absolute -top-1.5 -right-1/4 bg-white px-2 py-1 rounded-full font-semibold text-secondary-text border text-[10px] ${borderColor}`}
                     >
                       {time}
                     </span>
@@ -309,8 +318,7 @@ const ViewClubRequest = () => {
               <div className="flex flex-row items-center">
                 <img src={ICONS.Location} alt="location" className="w-3 h-4" />
                 <span className="text-base text-secondary-text ml-2 capitalize">
-                  {selectedOwner?.clubAddress}, {selectedOwner?.city},{" "}
-                  {selectedOwner?.state} {selectedOwner?.pincode}
+                  {selectedOwner?.clubAddress !== null ? `${selectedOwner?.clubAddress + ', ' + selectedOwner?.city + ', ' + selectedOwner?.state + ', ' + selectedOwner?.pincode}` : "No Location"}
                 </span>
               </div>
             </div>
@@ -499,7 +507,7 @@ const ViewClubRequest = () => {
       </CustomBox>
       {/* Amenities */}
       <CustomBox customClasses="p-4">
-        <h2 className="text-lg font-medium">Amenities</h2>
+        <h2 className="text-lg font-medium">Amenities/Facilities</h2>
         <div className="mt-3 flex flex-row w-full flex-wrap gap-y-4">
           {((selectedOwner?.facilities && selectedOwner.facilities.length > 0) ||
             (selectedOwner?.club_facilities && selectedOwner.club_facilities.length > 0)) ? (
@@ -519,7 +527,7 @@ const ViewClubRequest = () => {
               );
             })
           ) : (
-            <span className="text-secondary-text text-sm">No Amenities</span>
+            <span className="text-secondary-text text-sm">No Amenities/Facilities</span>
           )}
         </div>
       </CustomBox>
@@ -1001,8 +1009,8 @@ const ViewClubRequest = () => {
                   </h2>
                   <span className="text-xs text-secondary-text">
                     Uploaded:{" "}
-                    {uploadDate && dayjs(uploadDate).isValid()
-                      ? dayjs(uploadDate).format("MMMM DD, YYYY")
+                    {uploadDate
+                      ? formatLocalDate(uploadDate, "MMMM DD, YYYY") || "Recently"
                       : "Recently"}{" "}
                     {docInfo.size > 0 && `| ${formatFileSize(docInfo.size)}`}
                   </span>
@@ -1117,8 +1125,8 @@ const ViewClubRequest = () => {
                     </span>
                     <span className="text-xs text-secondary-text">
                       Uploaded:{" "}
-                      {uploadDate && dayjs(uploadDate).isValid()
-                        ? dayjs(uploadDate).format("MMMM DD, YYYY")
+                      {uploadDate
+                        ? formatLocalDate(uploadDate, "MMMM DD, YYYY") || "Recently"
                         : "Recently"}{" "}
                       {docInfo.size > 0 && `| ${formatFileSize(docInfo.size)}`}
                     </span>

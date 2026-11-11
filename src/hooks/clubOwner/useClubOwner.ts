@@ -17,7 +17,7 @@ import type {
 } from "../../api/clubRequest/clubRequest.types";
 
 // 🔹 Fetch Unverified Club Owners (useQuery)
-export const useUnverifiedOwners = (search: string = "", status?: string) => {
+export const useUnverifiedOwners = (search?: string, status?: string) => {
   const { data, isLoading, isFetching, error, refetch } =
     useQuery<ClubListResponse>({
       queryKey: ["unverifiedOwners", search, status],
@@ -56,6 +56,7 @@ export const useClubOwnerDetails = (ownerId: number) => {
     queryKey: ["clubOwnerDetails", ownerId],
     queryFn: () => getClubOwnerById(ownerId),
     enabled: Boolean(ownerId),
+    refetchInterval:20000
   });
 
   return {
@@ -150,6 +151,7 @@ export const useClubOwnerActivityLogs = (documentId?: string) => {
     queryKey: ["clubOwnerActivityLogs", documentId],
     queryFn: () => getClubOwnerActivityLogsApi(documentId || ""),
     enabled: Boolean(documentId),
+    refetchInterval: 50000,
   });
 
   return {
@@ -179,4 +181,3 @@ export const useToggleSendNotifications = () => {
     isToggling: mutation.isPending,
   };
 };
-

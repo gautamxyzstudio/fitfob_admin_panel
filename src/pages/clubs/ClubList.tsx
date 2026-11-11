@@ -15,7 +15,7 @@ import { ICONS } from "../../assets/exports";
 import { useNavigate } from "react-router";
 import { useVerifiedOwners } from "../../hooks/clubOwner/useClubOwner";
 import { getMediaUrl } from "../../utility/utili";
-import dayjs from "dayjs";
+import { toLocalDate, formatLocalDate } from "../../utility/dayjs";
 
 const ClubList = () => {
   const navigate = useNavigate();
@@ -64,31 +64,31 @@ const ClubList = () => {
   // Compute active filter label for UI badge
   const activeFilterLabel = useMemo(() => {
     if (!startDate && !endDate) return null;
-    const today = dayjs().format("YYYY-MM-DD");
+    const today = toLocalDate().format("YYYY-MM-DD");
     if (startDate === today && endDate === today) return "Today";
     if (
-      startDate === dayjs().subtract(6, "day").format("YYYY-MM-DD") &&
+      startDate === toLocalDate().subtract(6, "day").format("YYYY-MM-DD") &&
       endDate === today
     ) {
       return "Last 7 Days";
     }
     if (
-      startDate === dayjs().subtract(29, "day").format("YYYY-MM-DD") &&
+      startDate === toLocalDate().subtract(29, "day").format("YYYY-MM-DD") &&
       endDate === today
     ) {
       return "Last 30 Days";
     }
     if (
-      startDate === dayjs().startOf("month").format("YYYY-MM-DD") &&
-      endDate === dayjs().endOf("month").format("YYYY-MM-DD")
+      startDate === toLocalDate().startOf("month").format("YYYY-MM-DD") &&
+      endDate === toLocalDate().endOf("month").format("YYYY-MM-DD")
     ) {
       return "This Month";
     }
     if (startDate && endDate) {
-      return `${dayjs(startDate).format("DD/MM/YY")} - ${dayjs(endDate).format("DD/MM/YY")}`;
+      return `${formatLocalDate(startDate, "DD/MM/YY")} - ${formatLocalDate(endDate, "DD/MM/YY")}`;
     }
-    if (startDate) return `From ${dayjs(startDate).format("DD/MM/YY")}`;
-    if (endDate) return `Until ${dayjs(endDate).format("DD/MM/YY")}`;
+    if (startDate) return `From ${formatLocalDate(startDate, "DD/MM/YY")}`;
+    if (endDate) return `Until ${formatLocalDate(endDate, "DD/MM/YY")}`;
     return null;
   }, [startDate, endDate]);
 
@@ -100,12 +100,12 @@ const ClubList = () => {
       if (!startDate && !endDate) return true;
       if (!club.createdAt) return false;
 
-      const clubDate = dayjs(club.createdAt);
+      const clubDate = toLocalDate(club.createdAt);
       if (!clubDate.isValid()) return false;
 
       if (startDate && endDate) {
-        const start = dayjs(startDate).startOf("day");
-        const end = dayjs(endDate).endOf("day");
+        const start = toLocalDate(startDate).startOf("day");
+        const end = toLocalDate(endDate).endOf("day");
         return (
           (clubDate.isAfter(start) || clubDate.isSame(start)) &&
           (clubDate.isBefore(end) || clubDate.isSame(end))
@@ -113,12 +113,12 @@ const ClubList = () => {
       }
 
       if (startDate) {
-        const start = dayjs(startDate).startOf("day");
+        const start = toLocalDate(startDate).startOf("day");
         return clubDate.isAfter(start) || clubDate.isSame(start);
       }
 
       if (endDate) {
-        const end = dayjs(endDate).endOf("day");
+        const end = toLocalDate(endDate).endOf("day");
         return clubDate.isBefore(end) || clubDate.isSame(end);
       }
 
@@ -149,7 +149,7 @@ const ClubList = () => {
     {
       field: "ownerName",
       headerName: "Owner’s name",
-      width: 160,
+      width: 110,
     },
     {
       field: "phoneNumber",
@@ -157,20 +157,27 @@ const ClubList = () => {
       width: 100,
       renderCell: (params) =>
         params.row.phoneNumber
-          ? `*****${params.row.phoneNumber?.replace(/^\+91/, "")?.slice(5)}`
+          ? `*****${params.row.phoneNumber?.replace(/^\+91/, "")?.slice(7)}`
           : "Na",
     },
     {
       field: "clubId",
       headerName: "Id No.",
       width: 100,
-      renderCell: (params) => `*****${params.row.clubId?.slice(6)}`,
+      renderCell: (params) => `*****${params.row.clubId?.slice(8)}`,
     },
     {
       field: "location",
       headerName: "Location",
-      width: 160,
-      renderCell: (params) => `${params.row.city}, ${params.row.state}`,
+      width: 110,
+      renderCell: (params) => {
+        return (
+          <span className="line-clamp-1" title={`${params.row.clubAddress}, ${params.row.city}, ${params.row.state}, ${params.row.pincode}`}>
+            {params.row.city}, {params.row.state}
+          </span>
+        )
+      }
+
     },
     {
       field: "createdAt",
@@ -178,17 +185,17 @@ const ClubList = () => {
       width: 110,
       renderCell: (params) =>
         params.row.createdAt
-          ? dayjs(params.row.createdAt).format("DD/MM/YYYY")
+          ? formatLocalDate(params.row.createdAt, "DD/MM/YYYY")
           : "-",
     },
     {
       field: "status",
       headerName: "Status",
-      width: 110,
+      width: 60,
       renderCell: (params) => {
         return (
-          <div className="relative px-6.25 py-2 text-xs rounded-[52px] capitalize bg-lightGreen text-green">
-            {params.row.user?.verification_status || "Verified"}
+          <div className="relative px-5 py-2 text-xs rounded-[52px] capitalize bg-lightGreen text-green w-fit">
+            {params.row.user?.verification_status}
           </div>
         );
       },
@@ -324,29 +331,29 @@ const ClubList = () => {
                 {
                   label: "Today",
                   getRange: () => ({
-                    start: dayjs().format("YYYY-MM-DD"),
-                    end: dayjs().format("YYYY-MM-DD"),
+                    start: toLocalDate().format("YYYY-MM-DD"),
+                    end: toLocalDate().format("YYYY-MM-DD"),
                   }),
                 },
                 {
                   label: "Last 7 Days",
                   getRange: () => ({
-                    start: dayjs().subtract(6, "day").format("YYYY-MM-DD"),
-                    end: dayjs().format("YYYY-MM-DD"),
+                    start: toLocalDate().subtract(6, "day").format("YYYY-MM-DD"),
+                    end: toLocalDate().format("YYYY-MM-DD"),
                   }),
                 },
                 {
                   label: "Last 30 Days",
                   getRange: () => ({
-                    start: dayjs().subtract(29, "day").format("YYYY-MM-DD"),
-                    end: dayjs().format("YYYY-MM-DD"),
+                    start: toLocalDate().subtract(29, "day").format("YYYY-MM-DD"),
+                    end: toLocalDate().format("YYYY-MM-DD"),
                   }),
                 },
                 {
                   label: "This Month",
                   getRange: () => ({
-                    start: dayjs().startOf("month").format("YYYY-MM-DD"),
-                    end: dayjs().endOf("month").format("YYYY-MM-DD"),
+                    start: toLocalDate().startOf("month").format("YYYY-MM-DD"),
+                    end: toLocalDate().endOf("month").format("YYYY-MM-DD"),
                   }),
                 },
               ].map((preset) => {
@@ -361,11 +368,10 @@ const ClubList = () => {
                       setTempStartDate(range.start);
                       setTempEndDate(range.end);
                     }}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border text-left ${
-                      isSelected
-                        ? "bg-red-50 text-primary border-primary font-semibold"
-                        : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
-                    }`}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border text-left ${isSelected
+                      ? "bg-red-50 text-primary border-primary font-semibold"
+                      : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                      }`}
                   >
                     {preset.label}
                   </button>
@@ -446,9 +452,9 @@ const ClubList = () => {
             <span className="text-secondary-text text-sm">
               {filteredOwners.length > 0
                 ? `${page * rowsPerPage + 1} - ${Math.min(
-                    (page + 1) * rowsPerPage,
-                    filteredOwners.length,
-                  )} of ${filteredOwners.length} items`
+                  (page + 1) * rowsPerPage,
+                  filteredOwners.length,
+                )} of ${filteredOwners.length} items`
                 : "No items"}
             </span>
             <Box display="flex" gap={1}>

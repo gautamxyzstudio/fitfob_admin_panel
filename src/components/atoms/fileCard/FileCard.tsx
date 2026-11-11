@@ -1,5 +1,5 @@
 import { MoreHorizontal } from "lucide-react";
-import dayjs from "dayjs";
+import { formatLocalDate } from "../../../utility/dayjs";
 import { ICONS } from "../../../assets/exports";
 import { formatFileSize } from "../../../utility/utili";
 
@@ -40,8 +40,8 @@ export const FileCard = ({
             {fileName}
           </span>
           <span className="text-[10px] leading-3.5 text-black">
-            {uploadDate && dayjs(uploadDate).isValid()
-              ? dayjs(uploadDate).format("MMMM DD, YYYY")
+            {uploadDate
+              ? formatLocalDate(uploadDate, "MMMM DD, YYYY") || "Uploaded Document"
               : "Uploaded Document"}
             {fileSize && fileSize > 0 ? ` | ${formatFileSize(fileSize)}` : ""}
           </span>

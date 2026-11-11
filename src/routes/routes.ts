@@ -58,7 +58,7 @@ export const routes = [
     route: "/app",
     subRoute: [
       {
-        name: "Facilities",
+        name: "Facilities/Amenities",
         key: "facilities",
         route: "/app/facilities",
       },

@@ -18,16 +18,19 @@ const notifications = [
     title: "Club Approved",
     desc: "Planet Fitness club request has been approved successfully.",
     time: "6 Min",
+    active: true,
   },
   {
     title: "Members & Memberships",
     desc: "New Member Joined A new member has joined Gold’s Gym.",
     time: "15 Min",
+    active: true,
   },
   {
     title: "Membership Upgraded",
     desc: "A member upgraded from Standard to Premium plan.",
     time: "18 Min",
+    active: true,
   },
   {
     title: "Earnings & Payouts",
@@ -74,7 +77,7 @@ const DrawerNotification = ({ open, onClose }: Props) => {
               Notification
             </h3>
             <div className="bg-[#f6f6f6] px-1.75 rounded-3xl">
-              <span className="text-sm text-black opacity-30">01</span>
+              <span className="text-sm text-black opacity-30">04</span>
             </div>
           </div>
 
@@ -94,7 +97,7 @@ const DrawerNotification = ({ open, onClose }: Props) => {
               key={index}
               onClick={() => setActiveIndex(index)}
               className={` cursor-pointer transition
-                ${index === activeIndex ? "bg-bg rounded-xl px-2.5 py-4" : "bg-white py-2.5"}
+                ${index === activeIndex || item.active ? "bg-bg rounded-xl px-2.5 py-4" : "bg-white py-2.5"}
               `}
             >
               <div className="flex justify-between items-start">

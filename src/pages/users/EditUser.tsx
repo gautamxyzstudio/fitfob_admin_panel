@@ -6,7 +6,7 @@ import { useClientDetail, useUpdateClient } from "../../hooks/client/useClient";
 import { IMAGES } from "../../assets/exports";
 import { CameraAlt } from "@mui/icons-material";
 import { Switch, TextField } from "@mui/material";
-import dayjs from "dayjs";
+import { formatLocalDate } from "../../utility/dayjs";
 
 const EditUser = () => {
   const { docId } = useParams<{ docId: string }>();
@@ -44,13 +44,13 @@ const EditUser = () => {
 
       setSignUpDate(
         client.createdAt
-          ? dayjs(client.createdAt).format("DD/MM/YYYY")
+          ? formatLocalDate(client.createdAt, "DD/MM/YYYY")
           : "10/02/2025",
       );
 
       setDateOfBirth(
         client.date_of_birth
-          ? dayjs(client.date_of_birth).format("DD/MM/YYYY")
+          ? formatLocalDate(client.date_of_birth, "DD/MM/YYYY")
           : "18/01/2001",
       );
 

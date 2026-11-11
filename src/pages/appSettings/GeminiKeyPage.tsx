@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
+import { formatLocalDateTime, formatLocalFromNow } from "../../utility/dayjs";
 import CustomBox from "../../components/atoms/customBox/CustomBox";
 import ReplaceGeminiKeyModal from "../../components/modules/appSettings/ReplaceGeminiKeyModal";
 import DeleteConfirmModal from "../../components/modules/appSettings/DeleteConfirmModal";
@@ -22,8 +22,6 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
-
-dayjs.extend(relativeTime);
 
 const GeminiIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   <svg
@@ -395,7 +393,7 @@ const GeminiKeyPage: React.FC = () => {
                     {/* Key / Document ID */}
                     <td className="py-3.5 px-4 align-middle">
                       <div className="flex flex-col font-mono text-xs">
-                        <span className="text-gray-800 truncate max-w-[220px]">
+                        <span className="text-gray-800 truncate max-w-55">
                           {maskedKeyDisplay(currentKey)}
                         </span>
                         <span className="text-gray-400 text-[11px]">
@@ -478,12 +476,12 @@ const GeminiKeyPage: React.FC = () => {
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-[#1C1C1C]">
                   {geminiKeyData?.updatedAt
-                    ? dayjs(geminiKeyData.updatedAt).format("DD MMM YYYY, hh:mm A")
-                    : dayjs().format("DD MMM YYYY, hh:mm A")}
+                    ? formatLocalDateTime(geminiKeyData.updatedAt)
+                    : formatLocalDateTime(new Date())}
                 </span>
                 <span className="text-[11px] text-gray-400">
                   {geminiKeyData?.updatedAt
-                    ? dayjs(geminiKeyData.updatedAt).fromNow()
+                    ? formatLocalFromNow(geminiKeyData.updatedAt)
                     : "Just now"}
                 </span>
               </div>

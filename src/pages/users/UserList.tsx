@@ -9,7 +9,7 @@ import { FilterList, Visibility } from "@mui/icons-material";
 import { Box, Menu, MenuItem } from "@mui/material";
 import { useNavigate } from "react-router";
 import { useClientList } from "../../hooks/client/useClient";
-import dayjs from "dayjs";
+import { formatLocalDate } from "../../utility/dayjs";
 
 const UserList = () => {
   const navigate = useNavigate();
@@ -99,7 +99,7 @@ const UserList = () => {
         return (
           <span className="text-sm text-secondary-text">
             {params.row.createdAt
-              ? dayjs(params.row.createdAt).format("DD/MM/YYYY")
+              ? formatLocalDate(params.row.createdAt, "DD/MM/YYYY")
               : "-"}
           </span>
         );

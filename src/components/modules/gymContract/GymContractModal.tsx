@@ -431,19 +431,19 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
           <thead>
             <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB] text-sm text-[#4B5563]">
               <th className="py-3.5 px-6 font-medium w-[22%]">Plan Duration</th>
-              <th className="py-3.5 px-6 font-medium w-[26%] border-l border-[#E5E7EB]">
+              <th className="py-3.5 px-6 font-medium w-[23%] border-l border-[#E5E7EB]">
                 <div>Customer Price</div>
                 <div className="text-[11px] text-[#9CA3AF] font-normal">
                   Locked globally
                 </div>
               </th>
-              <th className="py-3.5 px-6 font-medium w-[26%] border-l border-[#E5E7EB]">
+              <th className="py-3.5 px-6 font-medium w-[28%] border-l border-[#E5E7EB]">
                 <div>Fitfob Commission</div>
                 <div className="text-[11px] text-[#9CA3AF] font-normal">
                   Editable per club
                 </div>
               </th>
-              <th className="py-3.5 px-6 font-medium w-[26%] border-l border-[#E5E7EB]">
+              <th className="py-3.5 px-6 font-medium w-[23%] border-l border-[#E5E7EB]">
                 <div>Club Net Payout</div>
                 <div className="text-[11px] text-[#9CA3AF] font-normal">
                   Auto-calculated

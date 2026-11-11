@@ -11,6 +11,7 @@ import type {
   UpdateTierItemPayload,
 } from "../../api/membershipPlanPrices/membershipPlanPrices.types";
 import { useMembershipPlanPricesStore } from "../../store/membershipPlanPrices.store";
+import { formatLocalDateTime } from "../../utility/dayjs";
 
 export interface PlanPricing {
   customerPrice: number;
@@ -198,13 +199,7 @@ export const extractLatestTimestamp = (apiTiers: TierItem[]): string | null => {
   }
 
   if (latestTime === 0) return null;
-  return new Date(latestTime).toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatLocalDateTime(latestTime, "D MMM YYYY, hh:mm A");
 };
 
 /**
@@ -307,13 +302,7 @@ export const useMembershipPlanPrices = () => {
     mutationFn: (payload: UpdateMembershipPlanPricesPayload) =>
       updateMembershipPlanPricesApi(payload),
     onSuccess: () => {
-      const timestamp = new Date().toLocaleString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const timestamp = formatLocalDateTime(new Date(), "D MMM YYYY, hh:mm A");
       setLastPublishedAt(timestamp);
       queryClient.invalidateQueries({ queryKey: ["membershipPlanPrices"] });
     },

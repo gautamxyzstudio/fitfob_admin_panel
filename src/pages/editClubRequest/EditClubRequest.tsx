@@ -45,7 +45,7 @@ import {
   Eye,
   X,
 } from "lucide-react";
-import dayjs from "dayjs";
+import { formatLocalDate } from "../../utility/dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
 
 const parseTimeParts = (
@@ -208,11 +208,10 @@ const TimePickerInput = ({
                     type="button"
                     data-value={h}
                     onClick={() => updateTime(h, minute, period)}
-                    className={`py-1 rounded-md text-xs font-semibold transition cursor-pointer text-center ${
-                      isSelected
+                    className={`py-1 rounded-md text-xs font-semibold transition cursor-pointer text-center ${isSelected
                         ? "bg-primary text-white shadow-xs"
                         : "text-black hover:bg-[#ffdfe2]/60 hover:text-primary"
-                    }`}
+                      }`}
                   >
                     {h}
                   </button>
@@ -238,11 +237,10 @@ const TimePickerInput = ({
                     type="button"
                     data-value={m}
                     onClick={() => updateTime(hour, m, period)}
-                    className={`py-1 rounded-md text-xs font-semibold transition cursor-pointer text-center ${
-                      isSelected
+                    className={`py-1 rounded-md text-xs font-semibold transition cursor-pointer text-center ${isSelected
                         ? "bg-primary text-white shadow-xs"
                         : "text-black hover:bg-[#ffdfe2]/60 hover:text-primary"
-                    }`}
+                      }`}
                   >
                     {m}
                   </button>
@@ -264,11 +262,10 @@ const TimePickerInput = ({
                     key={p}
                     type="button"
                     onClick={() => updateTime(hour, minute, p)}
-                    className={`py-2 rounded-md text-xs font-bold transition cursor-pointer text-center ${
-                      isSelected
+                    className={`py-2 rounded-md text-xs font-bold transition cursor-pointer text-center ${isSelected
                         ? "bg-primary text-white shadow-xs"
                         : "text-black hover:bg-[#ffdfe2]/60 hover:text-primary"
-                    }`}
+                      }`}
                   >
                     {p}
                   </button>
@@ -600,6 +597,8 @@ const EditClubRequest = () => {
 
   const isPageLoading = loading || isFacilitiesLoading || isClubTypesLoading;
 
+  const goBack = useNavigate()
+
   return isPageLoading ? (
     <div className="flex justify-center items-center h-full p-6 bg-white rounded-xl w-full">
       <ActivityIndicator size={80} />
@@ -611,8 +610,15 @@ const EditClubRequest = () => {
     >
       {/* Club detail */}
       <CustomBox customClasses="p-4">
-        <h2 className="text-lg font-medium">Review Club Request</h2>
-        <div className="flex flex-row items-end justify-between w-full mt-4">
+      <div className="text-sm font-medium breadcrumbs">
+             <ul>
+              <li onClick={() => goBack(-1)} className="text-primary cursor-pointer hover:underline">
+              Go Back
+              </li>
+              <li>Review Club Request</li>
+            </ul>
+          </div>
+        <div className="flex flex-row items-end justify-between w-full mt-2">
           <div className="flex flex-row gap-x-3 items-center justify-start">
             <img
               src={logo}
@@ -625,14 +631,14 @@ const EditClubRequest = () => {
                   {selectedOwner?.clubName}
                 </span>
                 <div
-                  className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${selectedOwner?.user?.verification_status === "approved" ? "bg-lightGreen text-green!" : bgColor}`}
+                  className={`relative px-5 py-2 text-xs text-white rounded-[52px] ${selectedOwner?.user?.verification_status === "approved" ? "bg-lightGreen text-green!" : bgColor}`}
                 >
                   {selectedOwner?.user?.verification_status === "approved"
                     ? "Approved"
                     : "Pending"}
                   {selectedOwner?.user?.verification_status === "pending" && (
                     <span
-                      className={`absolute -top-1.5 -right-1.5 bg-white px-2 py-1 rounded-full text-secondary-text border ${borderColor}`}
+                      className={`absolute -top-1.5 -right-1/4 bg-white px-2 py-1 rounded-full text-secondary-text border text-[10px] font-semibold ${borderColor}`}
                     >
                       {time}
                     </span>
@@ -642,8 +648,7 @@ const EditClubRequest = () => {
               <div className="flex flex-row items-center">
                 <img src={ICONS.Location} alt="location" className="w-3 h-4" />
                 <span className="text-base text-secondary-text ml-2 capitalize">
-                  {selectedOwner?.clubAddress}, {selectedOwner?.city},{" "}
-                  {selectedOwner?.state} {selectedOwner?.pincode}
+                 {selectedOwner?.clubAddress !== null ? `${selectedOwner?.clubAddress+', '+selectedOwner?.city+', '+selectedOwner?.state + ', ' + selectedOwner?.pincode}` : "No Location"}
                 </span>
               </div>
             </div>
@@ -791,7 +796,7 @@ const EditClubRequest = () => {
 
       {/* Amenities */}
       <CustomBox customClasses="p-4">
-        <h2 className="text-lg font-medium">Amenities</h2>
+        <h2 className="text-lg font-medium">Amenities/Facilities</h2>
         <Controller
           name="facilities"
           control={control}
@@ -1112,8 +1117,8 @@ const EditClubRequest = () => {
                   </h2>
                   <span className="text-xs text-secondary-text">
                     Uploaded:{" "}
-                    {uploadDate && dayjs(uploadDate).isValid()
-                      ? dayjs(uploadDate).format("MMMM DD, YYYY")
+                    {uploadDate
+                      ? formatLocalDate(uploadDate, "MMMM DD, YYYY") || "Recently"
                       : "Recently"}{" "}
                     {docInfo.size > 0 && `| ${formatFileSize(docInfo.size)}`}
                   </span>
@@ -1235,8 +1240,8 @@ const EditClubRequest = () => {
                     </span>
                     <span className="text-xs text-secondary-text">
                       Uploaded:{" "}
-                      {uploadDate && dayjs(uploadDate).isValid()
-                        ? dayjs(uploadDate).format("MMMM DD, YYYY")
+                      {uploadDate
+                        ? formatLocalDate(uploadDate, "MMMM DD, YYYY") || "Recently"
                         : "Recently"}{" "}
                       {docInfo.size > 0 && `| ${formatFileSize(docInfo.size)}`}
                     </span>
@@ -1358,12 +1363,12 @@ const EditClubRequest = () => {
                     d.day === "monday"
                       ? d
                       : {
-                          ...d,
-                          isOpen: mon.isOpen,
-                          openingTime: openTime,
-                          closingTime: closeTime,
-                          timeStr,
-                        },
+                        ...d,
+                        isOpen: mon.isOpen,
+                        openingTime: openTime,
+                        closingTime: closeTime,
+                        timeStr,
+                      },
                   ),
                 );
               }}
@@ -1380,11 +1385,10 @@ const EditClubRequest = () => {
               return (
                 <div
                   key={item.day}
-                  className={`flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-xl border transition-all gap-2 ${
-                    item.isOpen
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-xl border transition-all gap-2 ${item.isOpen
                       ? "bg-white border-divider shadow-xs"
                       : "bg-gray-50/70 border-dashed border-gray-300 opacity-75"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3 w-36">
                     <button
@@ -1408,11 +1412,10 @@ const EditClubRequest = () => {
                           }),
                         );
                       }}
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded cursor-pointer transition ${
-                        item.isOpen
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded cursor-pointer transition ${item.isOpen
                           ? "bg-lightGreen text-green hover:opacity-80"
                           : "bg-lightRed text-red hover:opacity-80"
-                      }`}
+                        }`}
                     >
                       {item.isOpen ? "OPEN" : "CLOSED"}
                     </button>

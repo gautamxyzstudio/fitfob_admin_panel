@@ -13,11 +13,11 @@ const FacilitiesPage: React.FC = () => {
 
   return (
     <AppSettingsListing
-      title="Facilities"
+      title="Facilities/Amenities"
       nameColumnHeader="Name"
-      nameLabel="Facilities"
-      modalTitleAdd="Add Club Facility"
-      modalTitleEdit="Edit Club Facility"
+      nameLabel="Facilities/Amenities"
+      modalTitleAdd="Add Club Facility/Amenities"
+      modalTitleEdit="Edit Club Facility/Amenities"
       maxFileSizeMB={10}
       items={facilities}
       isLoading={isLoading}

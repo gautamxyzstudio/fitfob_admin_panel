@@ -4,6 +4,7 @@ import { ICONS } from "../../../assets/exports";
 import CustomButton from "../../atoms/customButton/CustomButton";
 import { ChevronRight, Logout } from "@mui/icons-material";
 import { routes } from "../../../routes/routes";
+import { useUnverifiedOwners } from "../../../hooks/clubOwner/useClubOwner";
 
 const SideNavBar = () => {
   const navigate = useNavigate();
@@ -15,8 +16,10 @@ const SideNavBar = () => {
     }
   };
 
+  const { unverifiedOwners } = useUnverifiedOwners("", "pending");
+  
   return (
-    <CustomBox customClasses="p-5 pt-4.5 flex w-[18%] h-full flex-col justify-between items-center overflow-clip overflow-y-scroll scrollbar-hide">
+    <CustomBox customClasses="p-5 pt-4.5 flex w-[16%] h-full flex-col justify-between items-center overflow-clip overflow-y-scroll scrollbar-hide">
       <div className="w-full h-full flex flex-col gap-y-8">
         <Link to="/" className="flex flex-row gap-x-1.75 items-center">
           <img className="w-auto h-8" src={ICONS.FITFOB} alt="Fitfob" />
@@ -52,19 +55,17 @@ const SideNavBar = () => {
                           className="w-5 h-5 object-contain transition duration-300 ease-in-out"
                         />
                         <span
-                          className={`${
-                            isActive ? "text-primary font-medium" : "text-secondary-text"
-                          } transition text-sm duration-300 ease-in-out`}
+                          className={`${isActive ? "text-primary font-medium" : "text-secondary-text"
+                            } transition text-sm duration-300 ease-in-out`}
                         >
                           {route.name}
                         </span>
                       </div>
                       <ChevronRight
-                        className={`text-sm ${
-                          isActive
-                            ? "rotate-90 text-primary"
-                            : "text-secondary-text"
-                        } transition-transform duration-200`}
+                        className={`text-sm ${isActive
+                          ? "rotate-90 text-primary"
+                          : "text-secondary-text"
+                          } transition-transform duration-200`}
                         sx={{ fontSize: 18 }}
                       />
                     </Link>
@@ -83,11 +84,10 @@ const SideNavBar = () => {
                             className="ml-8 pr-1 py-1"
                           >
                             <div
-                              className={`${
-                                isSubActive
-                                  ? "text-primary font-semibold"
-                                  : "text-secondary-text hover:text-black"
-                              } transition text-sm duration-200 ease-in-out`}
+                              className={`${isSubActive
+                                ? "text-primary font-semibold"
+                                : "text-secondary-text hover:text-black"
+                                } transition text-sm duration-200 ease-in-out`}
                             >
                               {sub.name}
                             </div>
@@ -118,9 +118,8 @@ const SideNavBar = () => {
                         className="w-5 h-5 object-contain transition duration-300 ease-in-out"
                       />
                       <span
-                        className={`${
-                          isActive ? "text-primary font-medium" : "text-secondary-text"
-                        } transition text-sm duration-300 ease-in-out`}
+                        className={`${isActive ? "text-primary font-medium" : "text-secondary-text"
+                          } transition text-sm duration-300 ease-in-out`}
                       >
                         {route.name}
                       </span>
@@ -128,7 +127,7 @@ const SideNavBar = () => {
 
                     {route.key === "clubRequest" && (
                       <span className="bg-[#FFECEE] text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                        05
+                        {unverifiedOwners.length.toLocaleString()}
                       </span>
                     )}
                   </div>

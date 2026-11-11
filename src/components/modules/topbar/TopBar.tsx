@@ -4,7 +4,6 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { ICONS, IMAGES } from "../../../assets/exports";
 import DrawerNotification from "../drawerNotification/DrawerNotification";
 import { useState } from "react";
-import { InputAdornment, TextField } from "@mui/material";
 
 const getPageTitle = (pathname: string): string => {
   if (pathname === "/app/master-pricing") return "Master Pricing";
@@ -31,55 +30,35 @@ const TopBar = () => {
   const title = getPageTitle(location.pathname);
 
   return (
-    <div className="w-full flex flex-row gap-x-3 sticky top-0 z-99">
-      <CustomBox customClasses="w-[79%] rounded-2xl pl-5 p-1.5 flex items-center justify-between shadow">
+    <div className="w-full flex flex-row gap-x-3 justify-between sticky top-0 z-99">
+      <CustomBox customClasses="w-[82%] rounded-xl pl-5 p-1.5 flex items-center justify-between shadow">
         <Link to={location.pathname}>
           <h2 className="text-black font-semibold text-base">{title}</h2>
         </Link>
-        <TextField
-          variant="outlined"
-          type="search"
-          placeholder="Search"
-          className="w-89 bg-background border-none rounded-xl"
-          sx={{
-            "& fieldset": {
-              border: "none",
-            },
-          }}
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <img src={ICONS.Search} alt="search" className="w-6 h-6" />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
       </CustomBox>
       <div className="relative">
         <img
           onClick={() => setOpenNotification(true)}
           src={ICONS.Notification}
           alt="notification"
-          className="cursor-pointer w-16 h-16 p-4 bg-white rounded-2xl"
+          className="cursor-pointer w-15 h-16 p-3 bg-white rounded-xl"
         />
-        <span className="absolute top-2.5 right-2.5 bg-primary text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center pointer-events-none">
-          01
+        <span className="absolute p-1 top-2.5 right-2.5 bg-primary text-white text-[10px] font-bold w-fit h-fit rounded-full flex items-center justify-center pointer-events-none">
+          04
         </span>
       </div>
       <img
         onClick={() => navigate("/settings")}
         src={ICONS.Setting}
         alt="setting"
-        className="cursor-pointer w-16 h-16 p-4 bg-white rounded-2xl"
+        className="cursor-pointer w-15 h-16 p-3 bg-white rounded-xl"
       />
       <div className="dropdown dropdown-hover dropdown-end">
         <img
           src={IMAGES.DummyPROFILE}
           onClick={() => navigate("/profile")}
           alt="profile"
-          className="w-16 h-16 rounded-2xl object-cover cursor-pointer "
+          className="w-16 h-16 rounded-xl object-cover cursor-pointer "
           tabIndex={0}
           role="button"
         />

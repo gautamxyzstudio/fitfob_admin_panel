@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
-import dayjs from "dayjs";
+import { toLocalDate } from "../../utility/dayjs";
 import { useAuthStore } from "../../store/auth.store";
 import CustomBox from "../../components/atoms/customBox/CustomBox";
 import { IMAGES } from "../../assets/exports";
@@ -29,9 +29,9 @@ const Dashboard = () => {
 
   // Real backend queries
   const { verifiedOwners, loading: clubsLoading } = useVerifiedOwners();
-  const { unverifiedOwners, loading: requestsLoading } = useUnverifiedOwners(
+  const { unverifiedOwners, loading: requestsLoading, } = useUnverifiedOwners(
     "",
-    "pending",
+    "pending", 
   );
   const { clients, loading: usersLoading } = useClientList();
   const { checkins, loading: checkinsLoading } = useClientCheckins();
@@ -52,7 +52,7 @@ const Dashboard = () => {
   // Derived real data
   const clubsThisMonth = useMemo(() => {
     return (verifiedOwners || []).filter((c) =>
-      c.createdAt ? dayjs(c.createdAt).isSame(dayjs(), "month") : false,
+      c.createdAt ? toLocalDate(c.createdAt).isSame(toLocalDate(), "month") : false,
     ).length;
   }, [verifiedOwners]);
 
@@ -63,7 +63,7 @@ const Dashboard = () => {
   const todayCheckinsCount = useMemo(() => {
     return (checkins || []).filter((c) => {
       const time = c.checkinTime || c.createdAt;
-      return time ? dayjs(time).isSame(dayjs(), "day") : false;
+      return time ? toLocalDate(time).isSame(toLocalDate(), "day") : false;
     }).length;
   }, [checkins]);
 
@@ -125,7 +125,7 @@ const Dashboard = () => {
   return (
     <div className="flex flex-col gap-5 w-full pb-6">
       {/* Hero Banner with Generated Gym Image */}
-      <div className="relative overflow-hidden rounded-2xl border border-divider shadow-sm min-h-[220px] sm:min-h-[260px] flex items-end">
+      <div className="relative overflow-hidden rounded-2xl border border-divider shadow-sm min-h-55 sm:min-h-65 flex items-end">
         {/* Background Image */}
         <img
           src={IMAGES.GymBanner}
@@ -134,7 +134,7 @@ const Dashboard = () => {
         />
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/45 to-transparent" />
 
         {/* Content on Image */}
         <div className="relative z-10 p-5 sm:p-7 w-full flex flex-col sm:flex-row sm:items-end justify-between gap-4">

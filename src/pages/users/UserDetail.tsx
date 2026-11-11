@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import CustomBox from "../../components/atoms/customBox/CustomBox";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
 import ActivityIndicator from "../../components/atoms/activityIndicator/ActivityIndicator";
 import { useClientDetail } from "../../hooks/client/useClient";
 import { IMAGES } from "../../assets/exports";
-import dayjs from "dayjs";
+import { toLocalDate, formatLocalDate, formatLocalTime } from "../../utility/dayjs";
 import {
   Description,
   FileDownload,
@@ -16,6 +18,33 @@ const UserDetail = () => {
   const { docId } = useParams<{ docId: string }>();
   const navigate = useNavigate();
   const { client, loading } = useClientDetail(docId);
+
+  // Checkins data and pagination state
+  const [checkinPage, setCheckinPage] = useState<number>(0);
+  const checkinRowsPerPage = 10;
+
+  // Sorted checkins (most recent first)
+  const sortedCheckins = useMemo(() => {
+    const list = client?.client_checkins || [];
+    return [...list].sort(
+      (a: any, b: any) =>
+        toLocalDate(b.checkinTime).valueOf() - toLocalDate(a.checkinTime).valueOf()
+    );
+  }, [client?.client_checkins]);
+
+  const totalCheckinPages = Math.max(1, Math.ceil(sortedCheckins.length / checkinRowsPerPage));
+  const safeCheckinPage = Math.min(
+    Math.max(0, checkinPage),
+    totalCheckinPages - 1
+  );
+
+  const paginatedCheckins = useMemo(() => {
+    if (sortedCheckins.length <= 10) {
+      return sortedCheckins;
+    }
+    const startIndex = safeCheckinPage * checkinRowsPerPage;
+    return sortedCheckins.slice(startIndex, startIndex + checkinRowsPerPage);
+  }, [sortedCheckins, safeCheckinPage]);
 
 
   if (loading) {
@@ -36,15 +65,15 @@ const UserDetail = () => {
     (client?.local_subscriptions?.[0]?.club_owner?.clubAddress
       ? `${client.local_subscriptions[0].club_owner.clubAddress}`
       : client?.local_subscriptions?.[0]?.club_owner?.city
-      ? `${client.local_subscriptions[0].club_owner.city}, ${client.local_subscriptions[0].club_owner.state}`
-      : "Sector 3, Faridabad, India");
+        ? `${client.local_subscriptions[0].club_owner.city}, ${client.local_subscriptions[0].club_owner.state}`
+        : "Sector 3, Faridabad, India");
 
   // Format dates
   const signUpDate = client?.createdAt
-    ? dayjs(client.createdAt).format("DD/MM/YYYY")
+    ? formatLocalDate(client.createdAt, "DD/MM/YYYY")
     : "10/02/2025";
   const dateOfBirth = client?.date_of_birth
-    ? dayjs(client.date_of_birth).format("DD/MM/YYYY")
+    ? formatLocalDate(client.date_of_birth, "DD/MM/YYYY")
     : "18/01/2001";
 
   // Subscriptions data (use real local_subscriptions or fallback mockup for visual fidelity)
@@ -52,64 +81,37 @@ const UserDetail = () => {
     client?.local_subscriptions && client.local_subscriptions.length > 0
       ? client.local_subscriptions
       : [
-          {
-            id: 1,
-            documentId: "TID1234686",
-            startDate: "2026-01-14T00:00:00.000Z",
-            subscriptionStatus: "active",
-            local_membership_plan: {
-              planName: "Luxury",
-              price: 4599,
-            },
-            club_owner: {
-              clubName: "Equinox",
-              clubCategory: "Luxury",
-            },
-            paymentMethod: "**** 4861",
+        {
+          id: 1,
+          documentId: "TID1234686",
+          startDate: "2026-01-14T00:00:00.000Z",
+          subscriptionStatus: "active",
+          local_membership_plan: {
+            planName: "Luxury",
+            price: 4599,
           },
-          {
-            id: 2,
-            documentId: "TID1234677",
-            startDate: "2025-04-12T00:00:00.000Z",
-            subscriptionStatus: "expired",
-            local_membership_plan: {
-              planName: "Basic",
-              price: 1999,
-            },
-            club_owner: {
-              clubName: "Anytime Fitness",
-              clubCategory: "Basic",
-            },
-            paymentMethod: "UPI",
+          club_owner: {
+            clubName: "Equinox",
+            clubCategory: "Luxury",
           },
-        ];
-
-  // Checkins data (use real client_checkins or fallback mockup)
-  const checkins =
-    client?.client_checkins && client.client_checkins.length > 0
-      ? client.client_checkins
-      : [
-          {
-            id: 1,
-            documentId: "CKID90021",
-            checkinTime: "2026-12-01T07:45:00.000Z",
-            subscriptionType: "Luxury",
-            club_owner: {
-              clubName: "Anytime Fitness",
-              clubCategory: "Luxury",
-            },
+          paymentMethod: "**** 4861",
+        },
+        {
+          id: 2,
+          documentId: "TID1234677",
+          startDate: "2025-04-12T00:00:00.000Z",
+          subscriptionStatus: "expired",
+          local_membership_plan: {
+            planName: "Basic",
+            price: 1999,
           },
-          {
-            id: 2,
-            documentId: "CKID90022",
-            checkinTime: "2026-12-02T08:30:00.000Z",
-            subscriptionType: "Budget",
-            club_owner: {
-              clubName: "Planet Fitness",
-              clubCategory: "Budget",
-            },
+          club_owner: {
+            clubName: "Anytime Fitness",
+            clubCategory: "Basic",
           },
-        ];
+          paymentMethod: "UPI",
+        },
+      ];
 
   return (
     <div className="flex w-full flex-col gap-y-4 pb-6">
@@ -139,11 +141,10 @@ const UserDetail = () => {
                 {client?.name || "David Lee"}
               </h2>
               <span
-                className={`px-3 py-0.5 text-xs rounded-[52px] font-medium capitalize ${
-                  isActive
-                    ? "bg-lightGreen text-green"
-                    : "bg-[#E5E7EB] text-[#4B5563]"
-                }`}
+                className={`px-3 py-0.5 text-xs rounded-[52px] font-medium capitalize ${isActive
+                  ? "bg-lightGreen text-green"
+                  : "bg-[#E5E7EB] text-[#4B5563]"
+                  }`}
               >
                 {isActive ? "Active" : "Inactive"}
               </span>
@@ -289,8 +290,8 @@ const UserDetail = () => {
                   ? `₹${sub.local_membership_plan.price.toFixed(2)}`
                   : "₹4599.00";
                 const dateStr = sub.startDate
-                  ? dayjs(sub.startDate).format("MM/DD/YYYY")
-                  : "01/14/2026";
+                  ? formatLocalDate(sub.startDate, "DD/MM/YYYY")
+                  : "14/01/2026";
                 const clubName = sub.club_owner?.clubName || "Equinox";
                 const paymentMethod = sub.paymentMethod || "**** 4861";
 
@@ -319,11 +320,10 @@ const UserDetail = () => {
                     </td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`px-3 py-1 rounded-[52px] text-xs font-medium capitalize ${
-                          isSubActive
-                            ? "bg-lightGreen text-green"
-                            : "bg-[#FEE2E2] text-[#EF4444]"
-                        }`}
+                        className={`px-3 py-1 rounded-[52px] text-xs font-medium capitalize ${isSubActive
+                          ? "bg-lightGreen text-green"
+                          : "bg-[#FEE2E2] text-[#EF4444]"
+                          }`}
                       >
                         {isSubActive ? "Active" : "Expired"}
                       </span>
@@ -350,65 +350,125 @@ const UserDetail = () => {
           <h3 className="text-base font-semibold text-black">
             Checkin list
           </h3>
-          <button className="text-sm font-medium text-secondary-text hover:text-black cursor-pointer">
-            View All
-          </button>
         </div>
 
         <div className="w-full overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="bg-[#F9FAFB] text-secondary-text text-xs border-b border-divider">
-                <th className="py-3 px-4 font-normal">Checkin ID</th>
-                <th className="py-3 px-4 font-normal">Club</th>
+                <th className="py-3 px-4 font-normal">Club Name</th>
                 <th className="py-3 px-4 font-normal">Date</th>
                 <th className="py-3 px-4 font-normal">Time</th>
                 <th className="py-3 px-4 font-normal">Memberships</th>
               </tr>
             </thead>
             <tbody>
-              {checkins.map((chk: any, idx: number) => {
-                const chkId = chk.documentId?.startsWith("CKID")
-                  ? chk.documentId
-                  : `CKID9002${idx + 1}`;
-                const clubName = chk.club_owner?.clubName || "Anytime Fitness";
-                const dateStr = chk.checkinTime
-                  ? dayjs(chk.checkinTime).format("MM/DD/YYYY")
-                  : "12/01/2026";
-                const timeStr = chk.checkinTime
-                  ? dayjs(chk.checkinTime).format("hh:mm A")
-                  : "07:45 AM";
-                const membership =
-                  chk.club_owner?.clubCategory ||
-                  chk.subscriptionType ||
-                  "Luxury";
-
-                return (
-                  <tr
-                    key={chk.id || idx}
-                    className="border-b border-gray-100 hover:bg-gray-50/60 transition"
+              {paginatedCheckins.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="py-6 text-center text-secondary-text text-sm"
                   >
-                    <td className="py-3.5 px-4 text-black font-normal">
-                      {chkId}
-                    </td>
-                    <td className="py-3.5 px-4 text-black font-normal">
-                      {clubName}
-                    </td>
-                    <td className="py-3.5 px-4 text-secondary-text font-normal">
-                      {dateStr}
-                    </td>
-                    <td className="py-3.5 px-4 text-secondary-text font-normal">
-                      {timeStr}
-                    </td>
-                    <td className="py-3.5 px-4 text-black font-normal">
-                      {membership}
-                    </td>
-                  </tr>
-                );
-              })}
+                    No check-ins recorded yet
+                  </td>
+                </tr>
+              ) : (
+                paginatedCheckins.map((chk: any, idx: number) => {
+                  const clubName = chk.clubName || "Anytime Fitness";
+                  const dateStr = chk.checkinTime
+                    ? formatLocalDate(chk.checkinTime, "DD/MM/YYYY")
+                    : "01/12/2026";
+                  const timeStr = chk.checkinTime
+                    ? formatLocalTime(chk.checkinTime, "hh:mm A")
+                    : "07:45 AM";
+                  const membership = chk.subscriptionType || "Luxury";
+
+                  return (
+                    <tr
+                      key={chk.id || chk.documentId || idx}
+                      className="border-b border-gray-100 hover:bg-gray-50/60 transition capitalize"
+                    >
+                      <td className="py-3.5 px-4 text-black font-normal">
+                        {clubName}
+                      </td>
+                      <td className="py-3.5 px-4 text-secondary-text font-normal">
+                        {dateStr}
+                      </td>
+                      <td className="py-3.5 px-4 text-secondary-text font-normal">
+                        {timeStr}
+                      </td>
+                      <td className="py-3.5 px-4 text-black font-normal">
+                        {membership}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Option - Displayed when length is greater than 10 */}
+        {sortedCheckins.length > 10 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-divider">
+            <span className="text-secondary-text text-xs sm:text-sm">
+              Showing {safeCheckinPage * checkinRowsPerPage + 1} -{" "}
+              {Math.min(
+                (safeCheckinPage + 1) * checkinRowsPerPage,
+                sortedCheckins.length
+              )}{" "}
+              of {sortedCheckins.length} items
+            </span>
+
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <CustomButton
+                buttonStyle={safeCheckinPage === 0 ? "disabled" : "outlined"}
+                label="Previous"
+                disabled={safeCheckinPage === 0}
+                customStyles="font-normal! text-xs py-1.5 px-3"
+                onClick={() => setCheckinPage((prev) => Math.max(prev - 1, 0))}
+              />
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalCheckinPages }, (_, i) => {
+                  const isCurrent = i === safeCheckinPage;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setCheckinPage(i)}
+                      className={`min-w-7 h-7 px-1.5 rounded-md text-xs font-medium transition cursor-pointer ${isCurrent
+                          ? "bg-primary text-white font-semibold shadow-xs"
+                          : "bg-white text-secondary-text hover:text-black border border-divider hover:bg-bg"
+                        }`}
+                    >
+                      {i + 1}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <CustomButton
+                buttonStyle={
+                  safeCheckinPage >= totalCheckinPages - 1
+                    ? "disabled"
+                    : "outlined"
+                }
+                label="Next"
+                disabled={safeCheckinPage >= totalCheckinPages - 1}
+                customStyles={`font-normal! text-xs py-1.5 px-3 ${safeCheckinPage < totalCheckinPages - 1
+                    ? "border-primary! text-primary!"
+                    : ""
+                  }`}
+                onClick={() =>
+                  setCheckinPage((prev) =>
+                    Math.min(prev + 1, totalCheckinPages - 1)
+                  )
+                }
+              />
+            </div>
+          </div>
+        )}
       </CustomBox>
 
       {/* User Activity Logs */}
@@ -417,7 +477,7 @@ const UserDetail = () => {
       {/* Bottom Action Buttons */}
       <div className="flex flex-row gap-x-4 w-full pt-1">
         <button
-          onClick={() => {}}
+          onClick={() => { }}
           className="flex-1 bg-white hover:bg-gray-50 border border-divider shadow-xs py-3.5 rounded-xl flex items-center justify-center gap-x-2 text-sm font-semibold text-secondary-text hover:text-black cursor-pointer transition"
         >
           <ReceiptLong className="w-5 h-5 text-secondary-text" />
@@ -425,7 +485,7 @@ const UserDetail = () => {
         </button>
 
         <button
-          onClick={() => {}}
+          onClick={() => { }}
           className="flex-1 bg-white hover:bg-gray-50 border border-divider shadow-xs py-3.5 rounded-xl flex items-center justify-center gap-x-2 text-sm font-semibold text-secondary-text hover:text-black cursor-pointer transition"
         >
           <FileDownload className="w-5 h-5 text-secondary-text" />

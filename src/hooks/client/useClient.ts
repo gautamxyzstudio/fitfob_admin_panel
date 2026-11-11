@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getClientActivityLogsApi,
@@ -118,6 +117,7 @@ export const useClientActivityLogs = (documentId?: string) => {
     queryKey: ["clientActivityLogs", documentId],
     queryFn: () => getClientActivityLogsApi(documentId || ""),
     enabled: Boolean(documentId),
+    refetchInterval: 30000,
   });
 
   return {

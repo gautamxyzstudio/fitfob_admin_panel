@@ -8,6 +8,7 @@ import {
   getMembershipPlanPricesApi,
   updateMembershipPlanPricesApi,
 } from "../api/membershipPlanPrices/membershipPlanPricesApi";
+import { formatLocalDateTime } from "../utility/dayjs";
 
 interface MembershipPlanPricesState {
   tiers: TierItem[];
@@ -49,13 +50,7 @@ export const useMembershipPlanPricesStore = create<MembershipPlanPricesState>(
       set({ isUpdating: true, error: null });
       try {
         const response = await updateMembershipPlanPricesApi(payload);
-        const timestamp = new Date().toLocaleString("en-IN", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+        const timestamp = formatLocalDateTime(new Date(), "D MMM YYYY, hh:mm A");
         set({
           isUpdating: false,
           lastPublishedAt: timestamp,

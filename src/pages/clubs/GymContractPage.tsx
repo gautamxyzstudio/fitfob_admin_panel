@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import CustomBox from "../../components/atoms/customBox/CustomBox";
@@ -97,7 +99,7 @@ const GymContractPage: React.FC = () => {
 
   useEffect(() => {
     const data = getInitialGymContract(id);
-    setAssignedTier(data.assignedTier || "premium");
+    setAssignedTier(data.assignedTier);
     setZeroCommissionDeal(data.zeroCommissionDeal ?? true);
     setZeroCommissionLimit(data.zeroCommissionLimit ?? 20);
     setCommissions(
@@ -206,7 +208,7 @@ const GymContractPage: React.FC = () => {
                 Clubs
               </Link>
               <span>›</span>
-              <span className="truncate max-w-[140px]">{clubName}</span>
+              <span className="truncate max-w-35">{clubName}</span>
               <span>›</span>
               <span className="text-[#374151] font-semibold">Commissions</span>
             </div>
@@ -337,7 +339,7 @@ const GymContractPage: React.FC = () => {
 
         {/* Pricing Matrix Table */}
         <div className="mt-7 w-full overflow-x-auto rounded-xl border border-[#E5E7EB]">
-          <table className="w-full text-left border-collapse min-w-[680px]">
+          <table className="w-full text-left border-collapse min-w-170">
             {/* Header */}
             <thead>
               <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB] text-sm text-[#4B5563]">

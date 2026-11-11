@@ -13,6 +13,7 @@ import {
 import {
   useMembershipPlanPrices,
 } from "../../hooks/appSettings/useMembershipPlanPrices";
+import { formatLocalDateTime } from "../../utility/dayjs";
 import type {
   UpdateMembershipPlanPricesPayload,
   UpdatePlanItemPayload,
@@ -231,13 +232,7 @@ const MasterPricingPage: React.FC = () => {
     try {
       await updatePrices(pendingDiff);
 
-      const timestamp = new Date().toLocaleString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const timestamp = formatLocalDateTime(new Date(), "D MMM YYYY, hh:mm A");
       localStorage.setItem(`${STORAGE_KEY}_published_at`, timestamp);
       setLocalPublishedAt(timestamp);
 

@@ -10,7 +10,7 @@ import type {
 } from "./clubRequest.types";
 
 export const unverifiedOwnersApi = async (
-  search: string,
+  search?: string,
   status?: string,
 ): Promise<ClubListResponse> => {
   const { token } = useAuthStore.getState();

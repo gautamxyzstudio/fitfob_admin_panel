@@ -15,7 +15,7 @@ import { getTimeShort, getMediaUrl } from "../../utility/utili";
 import { ICONS } from "../../assets/exports";
 import { useNavigate } from "react-router";
 import { useUnverifiedOwners } from "../../hooks/clubOwner/useClubOwner";
-import dayjs from "dayjs";
+import { formatLocalDate } from "../../utility/dayjs";
 
 const ClubRequest = () => {
   const navigate = useNavigate();
@@ -67,28 +67,26 @@ const ClubRequest = () => {
       width: 140,
     },
     {
-      field: "clubId",
-      headerName: "Id No.",
-      width: 120,
-      renderCell: (params) =>
-        params.row.clubId
-          ? `*****${params.row.clubId?.slice(8)}`
-          : "Not Generated",
-    },
-    {
       field: "location",
       headerName: "Location",
-      width: 160,
-      renderCell: (params) =>
-        params.row.city
+      width: 190,
+      renderCell: (params) => {
+        const address = params.row.city
           ? `${params.row.city}, ${params.row.state}`
-          : "No Location",
+          : "No Location";
+        const fullAdress = params.row.clubAddress ? `${params.row.clubAddress}, ${params.row.city}, ${params.row.state}, ${params.row.pincode}` : "No Location"
+        return (
+          <span className="line-clamp-1" title={fullAdress}>
+            {address}
+          </span>
+        )
+      }
     },
     {
       field: "createdAt",
       headerName: "Date",
       width: 100,
-      renderCell: (params) => dayjs(params.row.createdAt).format("DD/MM/YYYY"),
+      renderCell: (params) => formatLocalDate(params.row.createdAt, "DD/MM/YYYY"),
     },
     {
       field: "status",
@@ -121,12 +119,12 @@ const ClubRequest = () => {
 
         return (
           <div
-            className={`relative px-6.25 py-2 text-xs text-white rounded-[52px] ${bgColor} capitalize`}
+            className={`relative px-5 w-fit py-2 text-xs text-center text-white rounded-[52px] ${bgColor} capitalize`}
           >
             {currentStatus}
             {currentStatus === "pending" && (
               <span
-                className={`absolute -top-1.5 -right-1.5 bg-white px-2 py-1 rounded-full text-secondary-text border ${borderColor}`}
+                className={`absolute -top-1.5 -right-1/5 bg-white px-2 py-1 rounded-full text-secondary-text border text-[10px] font-semibold ${borderColor}`}
               >
                 {time}
               </span>
@@ -273,9 +271,9 @@ const ClubRequest = () => {
             <span className="text-secondary-text text-sm">
               {unverifiedOwners.length > 0
                 ? `${page * rowsPerPage + 1} - ${Math.min(
-                    (page + 1) * rowsPerPage,
-                    unverifiedOwners.length,
-                  )} of ${unverifiedOwners.length} items`
+                  (page + 1) * rowsPerPage,
+                  unverifiedOwners.length,
+                )} of ${unverifiedOwners.length} items`
                 : "No items"}
             </span>
             <Box display="flex" gap={1}>

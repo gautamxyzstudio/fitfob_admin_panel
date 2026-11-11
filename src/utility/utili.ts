@@ -1,15 +1,30 @@
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import dayjs, {
+  toLocalDate,
+  formatLocalDate,
+  formatLocalDateTime,
+  formatLocalTime,
+  formatLocalFromNow,
+  getLocalTimezone,
+} from "./dayjs";
 
-dayjs.extend(customParseFormat);
+export {
+  toLocalDate,
+  formatLocalDate,
+  formatLocalDateTime,
+  formatLocalTime,
+  formatLocalFromNow,
+  getLocalTimezone,
+};
 
 export const getTimeShort = (givenDate: string): string => {
-  const now = dayjs();
-  const target = dayjs(givenDate);
+  if (!givenDate) return "";
+  const now = toLocalDate();
+  const target = toLocalDate(givenDate);
 
-  const minutes = now.diff(target, "minute");
-  const hours = now.diff(target, "hour");
-  const days = now.diff(target, "day");
+  const minutes = Math.max(0, now.diff(target, "minute"));
+  const hours = Math.max(0, now.diff(target, "hour"));
+  const days = Math.max(0, now.diff(target, "day"));
 
   if (minutes < 60) {
     return `${minutes}min`;

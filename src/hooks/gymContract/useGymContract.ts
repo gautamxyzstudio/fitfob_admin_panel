@@ -46,7 +46,9 @@ export const computeGymContractDiff = (
         plans: current.plans.map((p) => ({
           duration: p.duration,
           commissionMode: p.commissionMode,
-          ...(p.commissionMode === "custom" ? { customCommission: p.commission } : {}),
+          ...(p.commissionMode === "custom"
+            ? { customCommission: p.commission }
+            : {}),
         })),
       },
     };
@@ -126,15 +128,16 @@ export const computeGymContractDiff = (
 /**
  * Main hook for fetching and updating gym contract by documentId
  */
-export const useGymContract = (documentId?: string) => {
+export const useGymContract = (documentId?: string, enabled = true) => {
   const queryClient = useQueryClient();
 
   const { data, isLoading, isFetching, error, refetch } =
     useQuery<GymContractResponseData>({
       queryKey: ["gymContract", documentId],
       queryFn: () => getGymContractApi(documentId!),
-      enabled: Boolean(documentId && documentId !== "default"),
-      staleTime: 1000 * 60 * 5,
+      enabled: Boolean(enabled && documentId && documentId !== "default"),
+      staleTime: 0,
+      refetchOnWindowFocus: false,
     });
 
   const updateMutation = useMutation({

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Lock, X, Loader2, RotateCcw, AlertCircle } from "lucide-react";
+import { Lock, X, Loader2, RotateCcw, AlertCircle, RefreshCw } from "lucide-react";
 import useSnackBarStore from "../../../store/snackBar.store";
 import {
   useGymContract,
@@ -7,6 +7,7 @@ import {
   computeGymContractDiff,
 } from "../../../hooks/gymContract/useGymContract";
 import type {
+  GymContractPlan,
   GymContractResponseData,
   UpdateGymContractPayload,
 } from "../../../api/gymContract/gymContract.types";
@@ -71,7 +72,12 @@ interface GymContractContentProps {
   clubName: string;
   city?: string;
   isUpdating: boolean;
-  onSave: (diff: UpdateGymContractPayload) => Promise<void>;
+  isFetching?: boolean;
+  onRefresh?: () => void;
+  onSave: (
+    diff: UpdateGymContractPayload,
+    currentComms: { monthly: number; biAnnually: number; annually: number },
+  ) => Promise<void>;
   onClose: () => void;
 }
 
@@ -80,18 +86,20 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
   clubName,
   city,
   isUpdating,
+  isFetching,
+  onRefresh,
   onSave,
   onClose,
 }) => {
   const { setSnackBar } = useSnackBarStore();
 
-  // Load master tiers from localStorage or fallback
+  // Load master tiers from localStorage or standard master tier fallbacks
   const masterTiers = useMemo(() => {
     try {
       const saved = localStorage.getItem("fitfob_master_pricing_config");
       if (saved) {
         const parsed = JSON.parse(saved);
-        const map: Record<string, MasterTier> = {};
+        const map: Record<string, MasterTier> = { ...DEFAULT_MASTER_TIERS };
         parsed.forEach((t: MasterTier) => {
           map[t.id] = t;
         });
@@ -103,39 +111,37 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
     return DEFAULT_MASTER_TIERS;
   }, []);
 
-  // 1. Initial State from Contract or fallback
-  const initialCategoryTier = useMemo(() => {
+  // 1. Initial Category Tier from API contract (read-only)
+  const assignedTier = useMemo(() => {
     const raw = contract?.categoryTier?.toLowerCase();
     if (raw === "basic" || raw === "premium" || raw === "luxury") return raw;
     return "premium";
   }, [contract]);
 
-  const assignedTier = initialCategoryTier
-
-  const zeroCommissionDeal = contract?.zeroCommissionDeal?.enabled ?? true
+  // 2. Zero-Commission Deal state from API contract (read-only status, editable limit)
+  const zeroCommissionDeal = Boolean(contract?.zeroCommissionDeal?.enabled);
 
   const [zeroCommissionLimit, setZeroCommissionLimit] = useState<number | string>(() => {
     return contract?.zeroCommissionDeal?.userLimit ?? 20;
   });
 
-  // Extract initial plans from contract if available
-  const initialPlansMap = useMemo(() => {
-    const map: Record<
-      string,
-      { fitfobCommission: number; commissionMode: "default" | "custom"; customerPrice: number }
-    > = {};
+  const usedUserCount = contract?.zeroCommissionDeal?.usedUserCount ?? 0;
+
+  // 3. Extract plans from contract API response
+  const apiPlansMap = useMemo(() => {
+    const map: Record<string, GymContractPlan> = {};
     contract?.plans?.forEach((p) => {
-      map[p.duration] = {
-        fitfobCommission: p.fitfobCommission,
-        commissionMode: p.commissionMode === "custom" ? "custom" : "default",
-        customerPrice: p.customerPrice,
-      };
+      map[p.duration] = p;
     });
     return map;
   }, [contract]);
 
-  const currentMasterTier = masterTiers[assignedTier] || DEFAULT_MASTER_TIERS[assignedTier];
+  const currentMasterTier =
+    masterTiers[assignedTier] ||
+    DEFAULT_MASTER_TIERS[assignedTier] ||
+    DEFAULT_MASTER_TIERS.premium;
 
+  // 4. Commissions initialized directly from API response
   const [commissions, setCommissions] = useState<{
     monthly: number | string;
     biAnnually: number | string;
@@ -143,32 +149,36 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
   }>(() => {
     return {
       monthly:
-        initialPlansMap["monthly"]?.fitfobCommission ??
+        apiPlansMap["monthly"]?.fitfobCommission ??
         currentMasterTier.monthly.defaultComm,
       biAnnually:
-        initialPlansMap["six_months"]?.fitfobCommission ??
+        apiPlansMap["six_months"]?.fitfobCommission ??
         currentMasterTier.biAnnually.defaultComm,
       annually:
-        initialPlansMap["twelve_months"]?.fitfobCommission ??
+        apiPlansMap["twelve_months"]?.fitfobCommission ??
         currentMasterTier.annually.defaultComm,
     };
   });
 
+  // 5. Commission Modes initialized directly from API response
   const [commissionModes, setCommissionModes] = useState<{
     monthly: "default" | "custom";
     biAnnually: "default" | "custom";
     annually: "default" | "custom";
   }>(() => {
     return {
-      monthly: initialPlansMap["monthly"]?.commissionMode ?? "default",
-      biAnnually: initialPlansMap["six_months"]?.commissionMode ?? "default",
-      annually: initialPlansMap["twelve_months"]?.commissionMode ?? "default",
+      monthly:
+        apiPlansMap["monthly"]?.commissionMode === "custom" ? "custom" : "default",
+      biAnnually:
+        apiPlansMap["six_months"]?.commissionMode === "custom" ? "custom" : "default",
+      annually:
+        apiPlansMap["twelve_months"]?.commissionMode === "custom" ? "custom" : "default",
     };
   });
 
-  // Calculate pricing & net payouts
+  // Calculate pricing & net payouts based on contract values
   const monthlyCustomerPrice =
-    initialPlansMap["monthly"]?.customerPrice ??
+    apiPlansMap["monthly"]?.customerPrice ??
     currentMasterTier.monthly.customerPrice;
   const monthlyComm =
     commissions.monthly === ""
@@ -177,7 +187,7 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
   const monthlyNet = Math.max(0, monthlyCustomerPrice - monthlyComm);
 
   const biCustomerPrice =
-    initialPlansMap["six_months"]?.customerPrice ??
+    apiPlansMap["six_months"]?.customerPrice ??
     currentMasterTier.biAnnually.customerPrice;
   const biComm =
     commissions.biAnnually === ""
@@ -186,13 +196,17 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
   const biNet = Math.max(0, biCustomerPrice - biComm);
 
   const annualCustomerPrice =
-    initialPlansMap["twelve_months"]?.customerPrice ??
+    apiPlansMap["twelve_months"]?.customerPrice ??
     currentMasterTier.annually.customerPrice;
   const annualComm =
     commissions.annually === ""
       ? currentMasterTier.annually.defaultComm
       : Number(commissions.annually) || 0;
   const annualNet = Math.max(0, annualCustomerPrice - annualComm);
+
+  const monthlyDefaultComm = currentMasterTier.monthly.defaultComm;
+  const biAnnualDefaultComm = currentMasterTier.biAnnually.defaultComm;
+  const annualDefaultComm = currentMasterTier.annually.defaultComm;
 
   // Handle commission input change
   const handleCommissionChange = (
@@ -203,10 +217,10 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
     const numericVal = clean === "" ? 0 : parseInt(clean, 10);
     const tierDefaultComm =
       interval === "monthly"
-        ? currentMasterTier.monthly.defaultComm
+        ? monthlyDefaultComm
         : interval === "biAnnually"
-        ? currentMasterTier.biAnnually.defaultComm
-        : currentMasterTier.annually.defaultComm;
+          ? biAnnualDefaultComm
+          : annualDefaultComm;
 
     setCommissions((prev) => ({
       ...prev,
@@ -226,10 +240,10 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
   ) => {
     const tierDefaultComm =
       interval === "monthly"
-        ? currentMasterTier.monthly.defaultComm
+        ? monthlyDefaultComm
         : interval === "biAnnually"
-        ? currentMasterTier.biAnnually.defaultComm
-        : currentMasterTier.annually.defaultComm;
+          ? biAnnualDefaultComm
+          : annualDefaultComm;
 
     setCommissions((prev) => ({
       ...prev,
@@ -241,7 +255,7 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
     }));
   };
 
-  // Build current state to evaluate diff
+  // Build current state to evaluate diff against original API response
   const currentFormState: GymContractFormState = useMemo(() => {
     return {
       categoryTier: assignedTier,
@@ -286,9 +300,9 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
 
   const hasChanges = Boolean(
     pendingDiff &&
-      (pendingDiff.data.categoryTier ||
-        pendingDiff.data.zeroCommissionDeal ||
-        (pendingDiff.data.plans && pendingDiff.data.plans.length > 0)),
+    (pendingDiff.data.categoryTier ||
+      pendingDiff.data.zeroCommissionDeal ||
+      (pendingDiff.data.plans && pendingDiff.data.plans.length > 0)),
   );
 
   const handleSaveContract = async () => {
@@ -299,7 +313,11 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
     }
 
     try {
-      await onSave(pendingDiff);
+      await onSave(pendingDiff, {
+        monthly: monthlyComm,
+        biAnnually: biComm,
+        annually: annualComm,
+      });
     } catch {
       // Error handled by parent onSave
     }
@@ -313,15 +331,32 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
       {/* Top Header & Breadcrumb */}
       <div className="w-full flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="flex flex-col gap-y-1">
-          <h2 className="text-xl sm:text-2xl font-bold text-[#1C1C1C] tracking-tight capitalize">
-            Gym Contract: {displayName}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#1C1C1C] tracking-tight capitalize">
+              Gym Contract: {displayName || "Partner Club"}
+            </h2>
+            {isFetching && (
+              <RefreshCw className="w-4 h-4 animate-spin text-primary shrink-0" />
+            )}
+          </div>
           <p className="text-xs sm:text-sm text-[#787571] max-w-2xl leading-relaxed">
             Assign the category tier (this locks customer prices) and set the negotiated Fitfob commission
             for this partner.
           </p>
         </div>
 
+        <div className="flex items-center gap-1 self-start">
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={isFetching}
+              title="Refresh contract from server"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-gray-100 transition cursor-pointer disabled:opacity-40"
+            >
+              <RotateCcw className={`w-4 h-4 ${isFetching ? "animate-spin text-primary" : ""}`} />
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -329,28 +364,23 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
       </div>
 
       {/* Top Two Cards: Assigned Category Tier & Zero-Commission Deal */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
-        {/* Card 1: ASSIGNED CATEGORY TIER */}
+        {/* Card 1: ASSIGNED CATEGORY TIER (Read-only / Non-editable) */}
         <div className="border border-[#E5E7EB] rounded-2xl p-5 bg-white flex flex-col justify-between relative shadow-2xs">
           <div>
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wider block">
-                ASSIGNED CATEGORY TIER
-              </label>
-              {pendingDiff?.data.categoryTier && (
-                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
-                  MODIFIED
-                </span>
-              )}
-            </div>
+            <label className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wider block">
+              ASSIGNED CATEGORY TIER
+            </label>
 
-            {/* Tier Selection Dropdown */}
+            {/* Read-only Tier Display */}
             <div className="relative mt-2.5">
-              <div className="w-full bg-white border border-[#E5E7EB] rounded-xl px-4 py-3 flex items-center justify-between text-sm font-bold text-[#1C1C1C] hover:border-gray-300 transition cursor-pointer shadow-2xs">
+              <div className="w-full bg-[#F3F4F6] border border-[#E5E7EB] rounded-xl px-4 py-3 flex items-center justify-between text-sm font-bold text-[#1C1C1C] shadow-2xs">
                 <span className="tracking-wide uppercase">{assignedTier}</span>
+                <Lock className="w-4 h-4 text-[#9CA3AF]" />
               </div>
             </div>
           </div>
@@ -364,7 +394,7 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
           </p>
         </div>
 
-        {/* Card 2: ZERO-COMMISSION DEAL */}
+        {/* Card 2: ZERO-COMMISSION DEAL (Read-only status, no toggle switch) */}
         <div
           className={`border rounded-2xl p-5 flex flex-col justify-between shadow-2xs transition-colors ${
             zeroCommissionDeal
@@ -381,8 +411,6 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
               >
                 ZERO-COMMISSION DEAL
               </span>
-
-              {/* Switch Toggle */}
             </div>
 
             {/* Active Badge & Usage Info */}
@@ -390,7 +418,7 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
               {zeroCommissionDeal ? (
                 <span className="bg-[#DCFCE7] text-[#15803D] text-[11px] font-bold px-2.5 py-1 rounded-md inline-flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
-                  ACTIVE (By User Count)
+                  ACTIVE ({usedUserCount} of {zeroCommissionLimit} users used)
                 </span>
               ) : (
                 <span className="bg-gray-200 text-gray-600 text-[11px] font-bold px-2.5 py-1 rounded-md inline-flex items-center gap-1.5">
@@ -416,7 +444,7 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                 const digits = e.target.value.replace(/\D/g, "");
                 setZeroCommissionLimit(digits);
               }}
-              className="w-5 text-sm font-bold text-[#1C1C1C] focus:outline-none disabled:text-gray-400 disabled:bg-transparent"
+              className="w-16 text-sm font-bold text-[#1C1C1C] focus:outline-none disabled:text-gray-400 disabled:bg-transparent"
               placeholder="20"
             />
             <span className="text-xs font-medium text-[#6B7280]">Users</span>
@@ -481,8 +509,8 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                       onChange={(e) =>
                         handleCommissionChange("monthly", e.target.value)
                       }
-                      className="w-16 text-sm font-semibold text-[#1C1C1C] focus:outline-none"
-                      placeholder={String(currentMasterTier.monthly.defaultComm)}
+                      className="w-20 text-sm font-semibold text-[#1C1C1C] focus:outline-none"
+                      placeholder={String(monthlyDefaultComm)}
                     />
                     <span
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${
@@ -504,7 +532,7 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                       className="text-[11px] text-gray-400 hover:text-primary transition flex items-center gap-1 self-start cursor-pointer"
                     >
                       <RotateCcw className="w-3 h-3" />
-                      <span>Reset to global default (₹{currentMasterTier.monthly.defaultComm})</span>
+                      <span>Reset to global default (₹{formatCurrency(monthlyDefaultComm)})</span>
                     </button>
                   )}
                 </div>
@@ -543,8 +571,8 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                       onChange={(e) =>
                         handleCommissionChange("biAnnually", e.target.value)
                       }
-                      className="w-16 text-sm font-semibold text-[#1C1C1C] focus:outline-none"
-                      placeholder={String(currentMasterTier.biAnnually.defaultComm)}
+                      className="w-20 text-sm font-semibold text-[#1C1C1C] focus:outline-none"
+                      placeholder={String(biAnnualDefaultComm)}
                     />
                     <span
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${
@@ -566,7 +594,7 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                       className="text-[11px] text-gray-400 hover:text-primary transition flex items-center gap-1 self-start cursor-pointer"
                     >
                       <RotateCcw className="w-3 h-3" />
-                      <span>Reset to global default (₹{currentMasterTier.biAnnually.defaultComm})</span>
+                      <span>Reset to global default (₹{formatCurrency(biAnnualDefaultComm)})</span>
                     </button>
                   )}
                 </div>
@@ -605,8 +633,8 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                       onChange={(e) =>
                         handleCommissionChange("annually", e.target.value)
                       }
-                      className="w-16 text-sm font-semibold text-[#1C1C1C] focus:outline-none"
-                      placeholder={String(currentMasterTier.annually.defaultComm)}
+                      className="w-20 text-sm font-semibold text-[#1C1C1C] focus:outline-none"
+                      placeholder={String(annualDefaultComm)}
                     />
                     <span
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${
@@ -628,7 +656,7 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                       className="text-[11px] text-gray-400 hover:text-primary transition flex items-center gap-1 self-start cursor-pointer"
                     >
                       <RotateCcw className="w-3 h-3" />
-                      <span>Reset to global default (₹{currentMasterTier.annually.defaultComm})</span>
+                      <span>Reset to global default (₹{formatCurrency(annualDefaultComm)})</span>
                     </button>
                   )}
                 </div>
@@ -684,9 +712,9 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
 const GymContractModal: React.FC<GymContractModalProps> = ({
   open,
   onClose,
-  clubId = "default",
+  clubId,
   documentId,
-  clubName = "Gold's Gym (Mohali)",
+  clubName = "",
   city,
   onSaveSuccess,
 }) => {
@@ -694,71 +722,71 @@ const GymContractModal: React.FC<GymContractModalProps> = ({
 
   const effectiveDocumentId = useMemo(() => {
     if (documentId && documentId.trim()) return documentId.trim();
-    if (clubId && clubId !== "default") return String(clubId).trim();
+    if (clubId && String(clubId) !== "default") return String(clubId).trim();
     return "";
   }, [documentId, clubId]);
 
   const {
     contract,
     isLoading,
+    isFetching,
     isUpdating,
     error,
     refetch,
     updateContract,
-  } = useGymContract(effectiveDocumentId);
+  } = useGymContract(effectiveDocumentId, open);
 
   if (!open) return null;
 
-  const handleSave = async (diffPayload: UpdateGymContractPayload) => {
+  const handleSave = async (
+    diffPayload: UpdateGymContractPayload,
+    currentComms: { monthly: number; biAnnually: number; annually: number },
+  ) => {
     try {
       if (effectiveDocumentId) {
         await updateContract(diffPayload);
       }
 
-      // Also persist to localStorage as backup
-      const fallbackData: GymContractData = {
+      // Prepare updated contract state for onSaveSuccess
+      const savedData: GymContractData = {
         assignedTier:
           (diffPayload.data.categoryTier as "basic" | "premium" | "luxury") ||
-          contract?.categoryTier ||
+          (contract?.categoryTier as "basic" | "premium" | "luxury") ||
           "premium",
         zeroCommissionDeal:
           diffPayload.data.zeroCommissionDeal?.enabled ??
-          contract?.zeroCommissionDeal.enabled ??
-          true,
+          contract?.zeroCommissionDeal?.enabled ??
+          false,
         zeroCommissionLimit:
           diffPayload.data.zeroCommissionDeal?.userLimit ??
-          contract?.zeroCommissionDeal.userLimit ??
-          20,
+          contract?.zeroCommissionDeal?.userLimit ??
+          0,
         commissions: {
-          monthly:
-            diffPayload.data.plans?.find((p) => p.duration === "monthly")
-              ?.customCommission || 300,
-          biAnnually:
-            diffPayload.data.plans?.find((p) => p.duration === "six_months")
-              ?.customCommission || 500,
-          annually:
-            diffPayload.data.plans?.find((p) => p.duration === "twelve_months")
-              ?.customCommission || 800,
+          monthly: currentComms.monthly,
+          biAnnually: currentComms.biAnnually,
+          annually: currentComms.annually,
         },
         lastSavedAt: new Date().toISOString(),
       };
 
       try {
-        localStorage.setItem(
-          getGymContractStorageKey(clubId),
-          JSON.stringify(fallbackData),
-        );
+        if (clubId && String(clubId) !== "default") {
+          localStorage.setItem(
+            getGymContractStorageKey(clubId),
+            JSON.stringify(savedData),
+          );
+        }
       } catch {
         // ignore
       }
 
       setSnackBar(
-        `Contract for ${clubName} saved successfully!`,
+        `Contract for ${clubName || "partner club"} saved successfully!`,
         "success",
       );
 
       if (onSaveSuccess) {
-        onSaveSuccess(fallbackData);
+        onSaveSuccess(savedData);
       }
       onClose();
     } catch (err: unknown) {
@@ -772,11 +800,11 @@ const GymContractModal: React.FC<GymContractModalProps> = ({
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-150">
       <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl relative my-auto border border-gray-100 min-h-100 flex flex-col justify-between">
-        {isLoading ? (
+        {isLoading || (!contract && isFetching) ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
             <p className="text-sm font-medium text-gray-600">
-              Loading contract for {clubName}...
+              Loading contract for {clubName || "partner club"}...
             </p>
           </div>
         ) : error ? (
@@ -805,11 +833,13 @@ const GymContractModal: React.FC<GymContractModalProps> = ({
           </div>
         ) : (
           <GymContractContent
-            key={`${effectiveDocumentId}_${contract ? "loaded" : "default"}`}
+            key={`${effectiveDocumentId}_${contract?.categoryTier}_${contract?.zeroCommissionDeal?.enabled}_${contract?.zeroCommissionDeal?.userLimit}_${contract?.plans?.map((p) => `${p.duration}-${p.fitfobCommission}-${p.commissionMode}`).join("_")}`}
             contract={contract}
             clubName={clubName}
             city={city}
             isUpdating={isUpdating}
+            isFetching={isFetching}
+            onRefresh={refetch}
             onSave={handleSave}
             onClose={onClose}
           />

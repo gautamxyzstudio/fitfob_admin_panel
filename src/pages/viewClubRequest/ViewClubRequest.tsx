@@ -1165,8 +1165,9 @@ const ViewClubRequest = () => {
         open={contractModalOpen}
         onClose={() => setContractModalOpen(false)}
         clubId={selectedOwner?.documentId || id}
-        clubName={selectedOwner?.clubName || "Gold's Gym"}
-        city={selectedOwner?.city || "Mohali"}
+        documentId={selectedOwner?.documentId}
+        clubName={selectedOwner?.clubName}
+        city={selectedOwner?.city}
         onSaveSuccess={() => refetch()}
       />
     </div>

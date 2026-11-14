@@ -4,6 +4,7 @@ import {
   toLocalDate,
   formatLocalDateTime,
   formatLocalFromNow,
+  formatLocalDate,
 } from "../../../utility/dayjs";
 import {
   Clock,
@@ -28,9 +29,12 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
+import { Popover } from "@mui/material";
 import CustomBox from "../../atoms/customBox/CustomBox";
 import ActivityIndicator from "../../atoms/activityIndicator/ActivityIndicator";
+import { keepPreviousData } from "@tanstack/react-query";
 import type {
   ClubOwnerActivityLog,
   ClubResponse,
@@ -49,14 +53,92 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
 }) => {
   const documentId =
     owner?.documentId || (owner as any)?.clubOwnerDocumentId || "";
-  const { activityLogs: apiLogs, loading: apiLoading, refetch } =
-    useClubOwnerActivityLogs(documentId);
+  const {
+    activityLogs: apiLogs,
+    loading: apiLoading,
+    isFetching,
+    isPlaceholderData,
+    refetch,
+  } = useClubOwnerActivityLogs(documentId, {
+    placeholderData: keepPreviousData,
+  });
 
   const [selectedFilter, setSelectedFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<"timeline" | "table">("timeline");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(5);
+
+  // Date range filter state (applied)
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  // Temporary date filter state (in popover before applying)
+  const [tempStartDate, setTempStartDate] = useState<string>("");
+  const [tempEndDate, setTempEndDate] = useState<string>("");
+  const [dateFilterAnchorEl, setDateFilterAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleOpenDateFilter = (event: React.MouseEvent<HTMLElement>) => {
+    setTempStartDate(startDate);
+    setTempEndDate(endDate);
+    setDateFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseDateFilter = () => {
+    setDateFilterAnchorEl(null);
+  };
+
+  const handleApplyDateFilter = () => {
+    setStartDate(tempStartDate);
+    setEndDate(tempEndDate);
+    setCurrentPage(1);
+    setDateFilterAnchorEl(null);
+  };
+
+  const handleResetDateFilter = () => {
+    setTempStartDate("");
+    setTempEndDate("");
+    setStartDate("");
+    setEndDate("");
+    setCurrentPage(1);
+    setDateFilterAnchorEl(null);
+  };
+
+  // Human-readable active date filter label
+  const activeDateFilterLabel = useMemo(() => {
+    if (!startDate && !endDate) return null;
+    const todayStr = toLocalDate().format("YYYY-MM-DD");
+    if (startDate === todayStr && endDate === todayStr) {
+      return "Today";
+    }
+    const yesterdayStr = toLocalDate().subtract(1, "day").format("YYYY-MM-DD");
+    if (startDate === yesterdayStr && endDate === yesterdayStr) {
+      return "Yesterday";
+    }
+    if (
+      startDate === toLocalDate().subtract(6, "day").format("YYYY-MM-DD") &&
+      endDate === todayStr
+    ) {
+      return "Last 7 Days";
+    }
+    if (
+      startDate === toLocalDate().subtract(29, "day").format("YYYY-MM-DD") &&
+      endDate === todayStr
+    ) {
+      return "Last 30 Days";
+    }
+    if (
+      startDate === toLocalDate().startOf("month").format("YYYY-MM-DD") &&
+      endDate === toLocalDate().endOf("month").format("YYYY-MM-DD")
+    ) {
+      return "This Month";
+    }
+    if (startDate && endDate) {
+      return `${formatLocalDate(startDate, "DD/MM/YY")} - ${formatLocalDate(endDate, "DD/MM/YY")}`;
+    }
+    if (startDate) return `From ${formatLocalDate(startDate, "DD/MM/YY")}`;
+    if (endDate) return `Until ${formatLocalDate(endDate, "DD/MM/YY")}`;
+    return null;
+  }, [startDate, endDate]);
 
   // Determine which logs to display - Real API response ONLY
   const logs: ClubOwnerActivityLog[] = useMemo(() => {
@@ -76,9 +158,41 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
     return [];
   }, [customLogs, apiLogs]);
 
+  // Filter logs by createdAt date range
+  const dateFilteredLogs = useMemo(() => {
+    if (!startDate && !endDate) return logs;
+
+    return logs.filter((log) => {
+      if (!log.createdAt) return false;
+      const logDate = toLocalDate(log.createdAt);
+      if (!logDate.isValid()) return false;
+
+      if (startDate && endDate) {
+        const start = toLocalDate(startDate).startOf("day");
+        const end = toLocalDate(endDate).endOf("day");
+        return (
+          (logDate.isAfter(start) || logDate.isSame(start)) &&
+          (logDate.isBefore(end) || logDate.isSame(end))
+        );
+      }
+
+      if (startDate) {
+        const start = toLocalDate(startDate).startOf("day");
+        return logDate.isAfter(start) || logDate.isSame(start);
+      }
+
+      if (endDate) {
+        const end = toLocalDate(endDate).endOf("day");
+        return logDate.isBefore(end) || logDate.isSame(end);
+      }
+
+      return true;
+    });
+  }, [logs, startDate, endDate]);
+
   // Filter logs by search & category
   const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
+    return dateFilteredLogs.filter((log) => {
       // If the log description has (Changed: ...), make sure there is at least 1 actual changed field!
       const parsed = parseLogDescription(log.description);
       if (
@@ -105,7 +219,7 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
 
       return matchesCategory && matchesSearch;
     });
-  }, [logs, selectedFilter, searchQuery]);
+  }, [dateFilteredLogs, selectedFilter, searchQuery]);
 
   // Pagination calculations
   const totalLogs = filteredLogs.length;
@@ -151,6 +265,12 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
                 {filteredLogs.length}{" "}
                 {filteredLogs.length === 1 ? "Update" : "Updates"}
               </span>
+              {(isFetching || isPlaceholderData) && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>Updating...</span>
+                </span>
+              )}
             </div>
             <p className="text-xs text-secondary-text mt-0.5">
               Clear visual breakdown showing previous values and new additions made by the owner.
@@ -158,7 +278,7 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
           </div>
         </div>
 
-        {/* View toggle, Search, & Refresh */}
+        {/* View toggle, Search, Date Filter & Refresh */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="relative flex-1 sm:flex-initial">
             <Search className="w-4 h-4 text-secondary-text absolute left-3 top-1/2 -translate-y-1/2" />
@@ -174,13 +294,46 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
             />
           </div>
 
+          {/* Date Range Filter Button */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleOpenDateFilter}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${activeDateFilterLabel
+                ? "bg-red-50 text-primary border-primary font-semibold shadow-2xs"
+                : "bg-bg text-secondary-text border-divider hover:bg-white hover:text-black"
+                }`}
+            >
+              <Calendar
+                className={`w-3.5 h-3.5 ${activeDateFilterLabel ? "text-primary" : "text-secondary-text"
+                  }`}
+              />
+              <span>
+                {activeDateFilterLabel
+                  ? `Date: ${activeDateFilterLabel}`
+                  : "Date Filter"}
+              </span>
+            </button>
+            {activeDateFilterLabel && (
+              <button
+                type="button"
+                onClick={handleResetDateFilter}
+                title="Clear date filter"
+                className="p-1.5 rounded-lg border border-divider bg-bg hover:bg-red-50 hover:text-primary text-secondary-text transition cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <button
             onClick={() => refetch()}
+            disabled={isFetching}
             title="Refresh logs"
-            className="p-1.5 rounded-lg border border-divider bg-bg hover:bg-white text-secondary-text hover:text-black transition cursor-pointer"
+            className="p-1.5 rounded-lg border border-divider bg-bg hover:bg-white text-secondary-text hover:text-black transition cursor-pointer disabled:opacity-50"
           >
             <RefreshCw
-              className={`w-4 h-4 ${apiLoading ? "animate-spin text-primary" : ""}`}
+              className={`w-4 h-4 ${isFetching ? "animate-spin text-primary" : ""}`}
             />
           </button>
 
@@ -188,8 +341,8 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
             <button
               onClick={() => setViewMode("timeline")}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${viewMode === "timeline"
-                  ? "bg-white text-primary shadow-xs"
-                  : "text-secondary-text hover:text-black"
+                ? "bg-white text-primary shadow-xs"
+                : "text-secondary-text hover:text-black"
                 }`}
             >
               <ListFilter className="w-3.5 h-3.5" />
@@ -198,8 +351,8 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
             <button
               onClick={() => setViewMode("table")}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition cursor-pointer ${viewMode === "table"
-                  ? "bg-white text-primary shadow-xs"
-                  : "text-secondary-text hover:text-black"
+                ? "bg-white text-primary shadow-xs"
+                : "text-secondary-text hover:text-black"
                 }`}
             >
               <TableIcon className="w-3.5 h-3.5" />
@@ -218,8 +371,8 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
           const isActive = selectedFilter === opt.key;
           const count =
             opt.key === "ALL"
-              ? logs.length
-              : logs.filter((l) => matchesLogCategory(l, opt.key)).length;
+              ? dateFilteredLogs.length
+              : dateFilteredLogs.filter((l) => matchesLogCategory(l, opt.key)).length;
 
           return (
             <button
@@ -229,15 +382,15 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
                 setCurrentPage(1);
               }}
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition shrink-0 cursor-pointer border ${isActive
-                  ? "bg-black text-white border-black shadow-xs"
-                  : "bg-white text-secondary-text border-divider hover:border-gray-400 hover:text-black"
+                ? "bg-black text-white border-black shadow-xs"
+                : "bg-white text-secondary-text border-divider hover:border-gray-400 hover:text-black"
                 }`}
             >
               <span>{opt.label}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${isActive
-                    ? "bg-white/20 text-white"
-                    : "bg-bg text-secondary-text"
+                  ? "bg-white/20 text-white"
+                  : "bg-bg text-secondary-text"
                   }`}
               >
                 {count}
@@ -245,10 +398,29 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
             </button>
           );
         })}
+
+        {activeDateFilterLabel && (
+          <div className="flex items-center gap-1.5 ml-auto shrink-0 bg-red-50 text-primary border border-primary/20 px-2.5 py-1 rounded-full text-xs">
+            <span className="flex items-center gap-1 font-medium">
+              <Calendar className="w-3 h-3 text-primary" />
+              <span>
+                Date: <strong>{activeDateFilterLabel}</strong>
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={handleResetDateFilter}
+              title="Clear date filter"
+              className="p-0.5 rounded-full hover:bg-primary/10 transition cursor-pointer"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Loading & Empty State */}
-      {apiLoading ? (
+      {(apiLoading || isFetching) && logs.length === 0 ? (
         <div className="py-12 flex flex-col items-center justify-center text-center bg-bg/40 rounded-xl border border-dashed border-divider my-2 p-4">
           <ActivityIndicator size={40} />
           <p className="text-xs text-secondary-text mt-3">Loading club logs...</p>
@@ -262,15 +434,20 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
             No Update Logs Found
           </p>
           <p className="text-xs text-secondary-text max-w-sm mt-1">
-            {searchQuery || selectedFilter !== "ALL"
+            {searchQuery || selectedFilter !== "ALL" || startDate || endDate
               ? "No updates match your selected search or filter criteria. Try resetting the filters."
               : "No update actions have been recorded for this club owner yet."}
           </p>
-          {(selectedFilter !== "ALL" || searchQuery) && (
+          {(selectedFilter !== "ALL" || searchQuery || startDate || endDate) && (
             <button
               onClick={() => {
                 setSelectedFilter("ALL");
                 setSearchQuery("");
+                setStartDate("");
+                setEndDate("");
+                setTempStartDate("");
+                setTempEndDate("");
+                setCurrentPage(1);
               }}
               className="mt-3 text-xs font-semibold text-primary hover:underline cursor-pointer"
             >
@@ -278,9 +455,15 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
             </button>
           )}
         </div>
-      ) : viewMode === "timeline" ? (
-        /* TIMELINE VIEW */
-        <div className="relative pl-5 sm:pl-7 mt-3 space-y-5 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-divider">
+      ) : (
+        <div
+          className={`relative transition-opacity duration-200 ${
+            isPlaceholderData ? "opacity-60 pointer-events-none" : "opacity-100"
+          }`}
+        >
+          {viewMode === "timeline" ? (
+            /* TIMELINE VIEW */
+            <div className="relative pl-5 sm:pl-7 mt-3 space-y-5 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-divider">
           {paginatedLogs.map((log, index) => {
             const parsed = parseLogDescription(log.description);
             const EntityIcon = getEntityIcon(log.entityName);
@@ -368,14 +551,14 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
                               {/* LEFT BOX: If items removed -> "Removed (-)" in red. If nothing removed -> "Previous" in neutral slate! */}
                               <div
                                 className={`p-3 rounded-lg flex flex-col justify-between ${hasActualRemovals
-                                    ? "bg-rose-50/80 border border-rose-200"
-                                    : "bg-slate-50/90 border border-slate-200"
+                                  ? "bg-rose-50/80 border border-rose-200"
+                                  : "bg-slate-50/90 border border-slate-200"
                                   }`}
                               >
                                 <div
                                   className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide mb-1.5 ${hasActualRemovals
-                                      ? "text-rose-700"
-                                      : "text-slate-700"
+                                    ? "text-rose-700"
+                                    : "text-slate-700"
                                     }`}
                                 >
                                   {hasActualRemovals ? (
@@ -392,8 +575,8 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
                                 </div>
                                 <div
                                   className={`p-2.5 rounded ${hasActualRemovals
-                                      ? "bg-white/80 border border-rose-200/60"
-                                      : "bg-white border border-slate-200/80"
+                                    ? "bg-white/80 border border-rose-200/60"
+                                    : "bg-white border border-slate-200/80"
                                     }`}
                                 >
                                   {renderOldValueDiff(
@@ -549,8 +732,8 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
                                 )}
                                 <div
                                   className={`p-2 rounded text-xs wrap-break-word leading-snug ${hasActualRemovals
-                                      ? "bg-rose-50/80 border border-rose-200"
-                                      : "bg-slate-50 border border-slate-200"
+                                    ? "bg-rose-50/80 border border-rose-200"
+                                    : "bg-slate-50 border border-slate-200"
                                     }`}
                                 >
                                   {renderOldValueDiff(
@@ -647,6 +830,8 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
           </table>
         </div>
       )}
+    </div>
+  )}
 
       {/* Pagination Footer */}
       {totalLogs > 0 && (
@@ -679,8 +864,8 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
                       setCurrentPage(1);
                     }}
                     className={`px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer ${pageSize === size
-                        ? "bg-primary text-white"
-                        : "bg-bg text-secondary-text hover:text-black hover:bg-slate-200"
+                      ? "bg-primary text-white"
+                      : "bg-bg text-secondary-text hover:text-black hover:bg-slate-200"
                       }`}
                   >
                     {size}
@@ -737,8 +922,8 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
                         type="button"
                         onClick={() => setCurrentPage(pageNum)}
                         className={`w-7 h-7 rounded-lg text-xs font-semibold flex items-center justify-center transition cursor-pointer ${isCurrent
-                            ? "bg-primary text-white shadow-2xs"
-                            : "text-secondary-text hover:text-black hover:bg-bg border border-transparent hover:border-divider"
+                          ? "bg-primary text-white shadow-2xs"
+                          : "text-secondary-text hover:text-black hover:bg-bg border border-transparent hover:border-divider"
                           }`}
                       >
                         {pageNum}
@@ -762,6 +947,176 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
           )}
         </div>
       )}
+      {/* Date Range Filter Popover */}
+      <Popover
+        open={Boolean(dateFilterAnchorEl)}
+        anchorEl={dateFilterAnchorEl}
+        onClose={handleCloseDateFilter}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "16px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+              mt: 1.5,
+              width: 320,
+              p: 2.5,
+              border: "1px solid #E5E7EB",
+            },
+          },
+        }}
+      >
+        <div className="flex flex-col gap-3">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-primary" />
+              <span className="text-sm font-bold text-gray-900">
+                Filter by Log Date
+              </span>
+            </div>
+            {(tempStartDate || tempEndDate) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTempStartDate("");
+                  setTempEndDate("");
+                }}
+                className="text-xs text-primary hover:underline font-medium cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Quick Presets */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+              Quick Presets
+            </label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                {
+                  label: "Today",
+                  getRange: () => ({
+                    start: toLocalDate().format("YYYY-MM-DD"),
+                    end: toLocalDate().format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "Yesterday",
+                  getRange: () => ({
+                    start: toLocalDate().subtract(1, "day").format("YYYY-MM-DD"),
+                    end: toLocalDate().subtract(1, "day").format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "Last 7 Days",
+                  getRange: () => ({
+                    start: toLocalDate().subtract(6, "day").format("YYYY-MM-DD"),
+                    end: toLocalDate().format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "Last 30 Days",
+                  getRange: () => ({
+                    start: toLocalDate().subtract(29, "day").format("YYYY-MM-DD"),
+                    end: toLocalDate().format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "This Month",
+                  getRange: () => ({
+                    start: toLocalDate().startOf("month").format("YYYY-MM-DD"),
+                    end: toLocalDate().endOf("month").format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "All Time",
+                  getRange: () => ({
+                    start: "",
+                    end: "",
+                  }),
+                },
+              ].map((preset) => {
+                const range = preset.getRange();
+                const isSelected =
+                  tempStartDate === range.start && tempEndDate === range.end;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      setTempStartDate(range.start);
+                      setTempEndDate(range.end);
+                    }}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border text-left ${isSelected
+                      ? "bg-red-50 text-primary border-primary font-semibold"
+                      : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                      }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Custom Date Range Inputs */}
+          <div className="flex flex-col gap-2 pt-1 border-t border-gray-100">
+            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+              Custom Range
+            </label>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] text-gray-600 font-medium">
+                  From:
+                </span>
+                <input
+                  type="date"
+                  value={tempStartDate}
+                  onChange={(e) => setTempStartDate(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs text-gray-800 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] text-gray-600 font-medium">To:</span>
+                <input
+                  type="date"
+                  value={tempEndDate}
+                  onChange={(e) => setTempEndDate(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs text-gray-800 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={handleCloseDateFilter}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleApplyDateFilter}
+              className="px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 text-xs font-semibold shadow-xs cursor-pointer"
+            >
+              Apply Filter
+            </button>
+          </div>
+        </div>
+      </Popover>
     </CustomBox>
   );
 };

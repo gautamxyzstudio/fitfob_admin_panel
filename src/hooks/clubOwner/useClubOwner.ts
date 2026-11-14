@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseQueryOptions,
+} from "@tanstack/react-query";
 import {
   getClubOwnerActivityLogsApi,
   getClubOwnerById,
@@ -17,55 +23,88 @@ import type {
 } from "../../api/clubRequest/clubRequest.types";
 
 // 🔹 Fetch Unverified Club Owners (useQuery)
-export const useUnverifiedOwners = (search?: string, status?: string) => {
-  const { data, isLoading, isFetching, error, refetch } =
-    useQuery<ClubListResponse>({
-      queryKey: ["unverifiedOwners", search, status],
-      queryFn: () => unverifiedOwnersApi(search, status),
-    });
+export function useUnverifiedOwners<TData = ClubListResponse>(
+  search?: string,
+  status?: string,
+  options?: Omit<
+    UseQueryOptions<ClubListResponse, Error, TData, any>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery<ClubListResponse, Error, TData, any>({
+    queryKey: ["unverifiedOwners", search, status],
+    queryFn: () => unverifiedOwnersApi(search, status),
+    placeholderData: keepPreviousData,
+    ...options,
+  });
+
+  const unverifiedOwners: TData = (query.data ?? []) as unknown as TData;
 
   return {
-    unverifiedOwners: data || [],
-    loading: isLoading || isFetching,
-    error: error ? (error as Error).message : null,
-    fetchUnverifiedOwners: () => refetch(),
-    refetch,
+    ...query,
+    unverifiedOwners,
+    loading: query.isLoading || query.isFetching,
+    error: query.error ? (query.error as Error).message : null,
+    fetchUnverifiedOwners: () => query.refetch(),
+    refetch: query.refetch,
   };
-};
+}
 
 // 🔹 Fetch Verified Club Owners (useQuery)
-export const useVerifiedOwners = (search: string = "") => {
-  const { data, isLoading, isFetching, error, refetch } =
-    useQuery<ClubListResponse>({
-      queryKey: ["verifiedOwners", search],
-      queryFn: () => verifiedOwnersApi(search),
-    });
+export function useVerifiedOwners<TData = ClubListResponse>(
+  search: string = "",
+  options?: Omit<
+    UseQueryOptions<ClubListResponse, Error, TData, any>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery<ClubListResponse, Error, TData, any>({
+    queryKey: ["verifiedOwners", search],
+    queryFn: () => verifiedOwnersApi(search),
+    placeholderData: keepPreviousData,
+    ...options,
+  });
+
+  const verifiedOwners: TData = (query.data ?? []) as unknown as TData;
 
   return {
-    verifiedOwners: data || [],
-    loading: isLoading || isFetching,
-    error: error ? (error as Error).message : null,
-    fetchVerifiedOwners: () => refetch(),
-    refetch,
+    ...query,
+    verifiedOwners,
+    loading: query.isLoading || query.isFetching,
+    error: query.error ? (query.error as Error).message : null,
+    fetchVerifiedOwners: () => query.refetch(),
+    refetch: query.refetch,
   };
-};
+}
 
 // 🔹 Fetch Single Club Owner Details (useQuery)
-export const useClubOwnerDetails = (ownerId: number) => {
-  const { data, isLoading, error, refetch } = useQuery<ClubResponse>({
+export function useClubOwnerDetails<TData = ClubResponse>(
+  ownerId: number,
+  options?: Omit<
+    UseQueryOptions<ClubResponse, Error, TData, any>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery<ClubResponse, Error, TData, any>({
     queryKey: ["clubOwnerDetails", ownerId],
     queryFn: () => getClubOwnerById(ownerId),
     enabled: Boolean(ownerId),
-    refetchInterval:20000
+    refetchInterval: 20000,
+    placeholderData: keepPreviousData,
+    ...options,
   });
 
+  const selectedOwner: TData | null = (query.data ??
+    null) as unknown as TData | null;
+
   return {
-    selectedOwner: data || null,
-    loading: isLoading,
-    error: error ? (error as Error).message : null,
-    refetch,
+    ...query,
+    selectedOwner,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
   };
-};
+}
 
 // 🔹 Update Club Owner Data (useMutation)
 export const useUpdateClubOwner = () => {
@@ -144,23 +183,35 @@ export const useRejectApproval = () => {
 };
 
 // 🔹 Fetch Club Owner Activity Logs by documentId (useQuery)
-export const useClubOwnerActivityLogs = (documentId?: string) => {
-  const { data, isLoading, isFetching, error, refetch } = useQuery<
-    ClubOwnerActivityLog[]
-  >({
+export function useClubOwnerActivityLogs<TData = ClubOwnerActivityLog[]>(
+  documentId?: string,
+  options?: Omit<
+    UseQueryOptions<ClubOwnerActivityLog[], Error, TData, any>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery<ClubOwnerActivityLog[], Error, TData, any>({
     queryKey: ["clubOwnerActivityLogs", documentId],
     queryFn: () => getClubOwnerActivityLogsApi(documentId || ""),
     enabled: Boolean(documentId),
     refetchInterval: 50000,
+    placeholderData: keepPreviousData,
+    ...options,
   });
 
+  const activityLogs: TData = (query.data ?? []) as unknown as TData;
+
   return {
-    activityLogs: data || [],
-    loading: isLoading || isFetching,
-    error: error ? (error as Error).message : null,
-    refetch,
+    ...query,
+    activityLogs,
+    loading: query.isLoading,
+    isInitialLoading: query.isLoading && !query.data,
+    isFetching: query.isFetching,
+    isPlaceholderData: query.isPlaceholderData,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
   };
-};
+}
 
 // 🔹 Toggle Send Push Notifications Mutation Hook
 export const useToggleSendNotifications = () => {

@@ -104,7 +104,10 @@ const Login = () => {
     );
   };
 
-  const handleAuthenticateOtpSubmit = (data: { otp: string }) => {
+  const handleAuthenticateOtpSubmit = (
+    data: { otp: string },
+    resetOtp?: () => void,
+  ) => {
     setGlobalLoader(true);
     if (tempToken) {
       mfaVerify(
@@ -117,6 +120,7 @@ const Login = () => {
           onSuccess: (data) => {
             setGlobalLoader(false);
             setOpen(false);
+            resetOtp?.();
             setSnackBar(data.message || "Login successfully!", "success");
             if (data.message || data.mfaResetRequired) {
               setMfa(false);
@@ -127,18 +131,20 @@ const Login = () => {
               localStorage.removeItem("user");
               localStorage.removeItem("mfa");
               localStorage.removeItem("mfaActive");
+              reset();
             } else if (data.jwt) {
               sessionStorage.setItem("user", JSON.stringify(data));
               localStorage.setItem("user", JSON.stringify(data));
               setSession(data.jwt, data.user.id);
-              navigate("/club-request");
+              navigate("/");
+              reset();
             }
-            reset();
           },
           onError: (error) => {
             setGlobalLoader(false);
             setSnackBar(error.message || "Something went wrong!", "error");
             console.log(error.message, "Error");
+            resetOtp?.();
           },
         },
       );
@@ -152,17 +158,17 @@ const Login = () => {
             setSnackBar("MFA successfully enabled!", "success");
             setMfaActive(true);
             setOpen(false);
-            reset();
+            resetOtp?.();
           },
           onError: (error) => {
             setGlobalLoader(false);
             setSnackBar(error.message || "Something went wrong!", "error");
             console.log(error.message, "Error");
             setMfaActive(false);
+            resetOtp?.();
           },
         },
       );
-      reset();
     }
   };
 

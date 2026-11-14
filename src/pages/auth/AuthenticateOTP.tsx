@@ -5,10 +5,16 @@ import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import OTPInput from "react-otp-input";
 import CustomButton from "../../components/atoms/customButton/CustomButton";
-// import useSnackBarStore from "../../store/snackBar.store";
 
 interface AuthenticateOtpPayload {
   otp: string;
+}
+
+interface AuthenticateOTPProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: AuthenticateOtpPayload, resetOtp?: () => void) => void;
+  loading: boolean;
 }
 
 const AuthenticateOTP = ({
@@ -16,25 +22,35 @@ const AuthenticateOTP = ({
   onClose,
   onSubmit,
   loading = false,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (data: AuthenticateOtpPayload) => void;
-  loading: boolean;
-}) => {
+}: AuthenticateOTPProps) => {
   const [timer, setTimer] = useState(0);
-  // const { setSnackBar } = useSnackBarStore();
 
   const {
     handleSubmit,
     control,
     formState: { errors },
+    reset,
   } = useForm<AuthenticateOtpPayload>({
     defaultValues: {
       otp: "",
     },
     mode: "onChange",
   });
+
+  useEffect(() => {
+    if (open) {
+      reset({ otp: "" });
+    }
+  }, [open, reset]);
+
+  const handleClose = () => {
+    reset({ otp: "" });
+    onClose();
+  };
+
+  const handleFormSubmit = (data: AuthenticateOtpPayload) => {
+    onSubmit(data, () => reset({ otp: "" }));
+  };
 
   useEffect(() => {
     const updateTimer = () => {
@@ -67,7 +83,7 @@ const AuthenticateOTP = ({
           alignItems: "center",
         },
       }}
-      onClose={onClose}
+      onClose={handleClose}
     >
       <img src={ICONS.AUTHENTICATE} className="w-25 h-25 mb-4" />
 
@@ -80,7 +96,7 @@ const AuthenticateOTP = ({
       </p>
       <form
         className="flex flex-col items-center justify-center mt-5 w-full mx-auto overflow-auto"
-        onSubmit={handleSubmit(onSubmit, onError)}
+        onSubmit={handleSubmit(handleFormSubmit, onError)}
       >
         <Controller
           control={control}

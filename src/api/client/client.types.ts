@@ -150,8 +150,13 @@ export interface UpdateClientPayload {
 
 export interface ClientActivityLog {
   id?: string | number;
-  clientDocumentId: string;
+  documentId?: string;
+  actorType?: "admin" | "club_owner" | "client" | string;
+  actorName?: string;
+  actorRole?: string;
+  clientDocumentId?: string;
   entityName: string;
+  entityId?: string;
   actionType: string;
   description: string;
   createdAt: string;

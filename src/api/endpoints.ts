@@ -23,7 +23,9 @@ export const EndPoints = {
   updatePendingClubOwner: (ownerId: number) =>
     `${BASE_URL}/api/pending-club-owner/${ownerId}`,
   clubOwnerActivityLogs: (documentId: string) =>
-    `${BASE_URL}/api/club-owner-activity-logs?documentId=${documentId}`,
+    `${BASE_URL}/api/activity-logs/club-owner/${documentId}`,
+  activityLogsClubOwner: (documentId: string) =>
+    `${BASE_URL}/api/activity-logs/club-owner/${documentId}`,
 
   // Club Facilities
   clubFacilities: `${BASE_URL}/api/club-facilities`,
@@ -43,7 +45,12 @@ export const EndPoints = {
   clientDetailByDocId: (docId: string) =>
     `${BASE_URL}/api/client-details/${docId}`,
   clientActivityLogs: (documentId: string) =>
-    `${BASE_URL}/api/client-activity-logs?documentId=${documentId}`,
+    `${BASE_URL}/api/activity-logs/client/${documentId}`,
+  activityLogsClient: (documentId: string) =>
+    `${BASE_URL}/api/activity-logs/client/${documentId}`,
+  activityLogsAdmin: `${BASE_URL}/api/activity-logs/admin`,
+  activityLogsEntity: (entityName: string, entityId: string) =>
+    `${BASE_URL}/api/activity-logs/entity/${entityName}/${entityId}`,
 
   // Check-ins
   clientCheckins: `${BASE_URL}/api/client-checkins`,

@@ -3,6 +3,7 @@ import {
   toLocalDate,
   formatLocalDateTime,
   formatLocalFromNow,
+  formatLocalDate,
 } from "../../../utility/dayjs";
 import {
   Clock,
@@ -23,9 +24,13 @@ import {
   ChevronRight,
   ArrowRight,
   SlidersHorizontal,
+  Calendar,
+  X,
 } from "lucide-react";
+import { Popover } from "@mui/material";
 import CustomBox from "../../atoms/customBox/CustomBox";
 import ActivityIndicator from "../../atoms/activityIndicator/ActivityIndicator";
+import { keepPreviousData } from "@tanstack/react-query";
 import type { ClientActivityLog } from "../../../api/client/client.types";
 import { useClientActivityLogs } from "../../../hooks/client/useClient";
 
@@ -158,8 +163,15 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
   customLogs,
 }) => {
   const documentId = docId || "";
-  const { activityLogs: apiLogs, loading: apiLoading, refetch } =
-    useClientActivityLogs(documentId);
+  const {
+    activityLogs: apiLogs,
+    loading: apiLoading,
+    isFetching,
+    isPlaceholderData,
+    refetch,
+  } = useClientActivityLogs(documentId, {
+    placeholderData: keepPreviousData,
+  });
 
   const [selectedFilter, setSelectedFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -167,24 +179,123 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(5);
 
+  // Date range filter state (applied)
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  // Temporary date filter state (in popover before applying)
+  const [tempStartDate, setTempStartDate] = useState<string>("");
+  const [tempEndDate, setTempEndDate] = useState<string>("");
+  const [dateFilterAnchorEl, setDateFilterAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleOpenDateFilter = (event: React.MouseEvent<HTMLElement>) => {
+    setTempStartDate(startDate);
+    setTempEndDate(endDate);
+    setDateFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseDateFilter = () => {
+    setDateFilterAnchorEl(null);
+  };
+
+  const handleApplyDateFilter = () => {
+    setStartDate(tempStartDate);
+    setEndDate(tempEndDate);
+    setCurrentPage(1);
+    setDateFilterAnchorEl(null);
+  };
+
+  const handleResetDateFilter = () => {
+    setTempStartDate("");
+    setTempEndDate("");
+    setStartDate("");
+    setEndDate("");
+    setCurrentPage(1);
+    setDateFilterAnchorEl(null);
+  };
+
+  // Human-readable active date filter label
+  const activeDateFilterLabel = useMemo(() => {
+    if (!startDate && !endDate) return null;
+    const todayStr = toLocalDate().format("YYYY-MM-DD");
+    if (startDate === todayStr && endDate === todayStr) {
+      return "Today";
+    }
+    const yesterdayStr = toLocalDate().subtract(1, "day").format("YYYY-MM-DD");
+    if (startDate === yesterdayStr && endDate === yesterdayStr) {
+      return "Yesterday";
+    }
+    if (
+      startDate === toLocalDate().subtract(6, "day").format("YYYY-MM-DD") &&
+      endDate === todayStr
+    ) {
+      return "Last 7 Days";
+    }
+    if (
+      startDate === toLocalDate().subtract(29, "day").format("YYYY-MM-DD") &&
+      endDate === todayStr
+    ) {
+      return "Last 30 Days";
+    }
+    if (
+      startDate === toLocalDate().startOf("month").format("YYYY-MM-DD") &&
+      endDate === toLocalDate().endOf("month").format("YYYY-MM-DD")
+    ) {
+      return "This Month";
+    }
+    if (startDate && endDate) {
+      return `${formatLocalDate(startDate, "DD/MM/YY")} - ${formatLocalDate(endDate, "DD/MM/YY")}`;
+    }
+    if (startDate) return `From ${formatLocalDate(startDate, "DD/MM/YY")}`;
+    if (endDate) return `Until ${formatLocalDate(endDate, "DD/MM/YY")}`;
+    return null;
+  }, [startDate, endDate]);
+
   // Only include Check-ins and Membership changes
   const logs: ClientActivityLog[] = useMemo(() => {
     const raw =
       customLogs && customLogs.length > 0 ? customLogs : apiLogs || [];
 
-    const filtered = raw.filter(
-      (log) => isCheckinLog(log) || isMembershipLog(log)
-    );
-
-    return [...filtered].sort(
+    return [...raw].sort(
       (a, b) =>
         toLocalDate(b.createdAt).valueOf() - toLocalDate(a.createdAt).valueOf()
     );
   }, [customLogs, apiLogs]);
 
+  // Filter logs by createdAt date range
+  const dateFilteredLogs = useMemo(() => {
+    if (!startDate && !endDate) return logs;
+
+    return logs.filter((log) => {
+      if (!log.createdAt) return false;
+      const logDate = toLocalDate(log.createdAt);
+      if (!logDate.isValid()) return false;
+
+      if (startDate && endDate) {
+        const start = toLocalDate(startDate).startOf("day");
+        const end = toLocalDate(endDate).endOf("day");
+        return (
+          (logDate.isAfter(start) || logDate.isSame(start)) &&
+          (logDate.isBefore(end) || logDate.isSame(end))
+        );
+      }
+
+      if (startDate) {
+        const start = toLocalDate(startDate).startOf("day");
+        return logDate.isAfter(start) || logDate.isSame(start);
+      }
+
+      if (endDate) {
+        const end = toLocalDate(endDate).endOf("day");
+        return logDate.isBefore(end) || logDate.isSame(end);
+      }
+
+      return true;
+    });
+  }, [logs, startDate, endDate]);
+
   // Filter logs by category and search
   const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
+    return dateFilteredLogs.filter((log) => {
       const matchesCat = matchesCategory(log, selectedFilter);
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
@@ -195,7 +306,7 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
 
       return matchesCat && matchesSearch;
     });
-  }, [logs, selectedFilter, searchQuery]);
+  }, [dateFilteredLogs, selectedFilter, searchQuery]);
 
   // Pagination calculations
   const totalLogs = filteredLogs.length;
@@ -230,6 +341,12 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
                 {filteredLogs.length}{" "}
                 {filteredLogs.length === 1 ? "Record" : "Records"}
               </span>
+              {(isFetching || isPlaceholderData) && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 animate-pulse">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>Updating...</span>
+                </span>
+              )}
             </div>
             <p className="text-xs text-secondary-text mt-0.5">
               Live tracking for user check-in times and membership changes.
@@ -237,7 +354,7 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
           </div>
         </div>
 
-        {/* View toggle, Search, & Refresh */}
+        {/* View toggle, Search, Date Filter & Refresh */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="relative flex-1 sm:flex-initial">
             <Search className="w-4 h-4 text-secondary-text absolute left-3 top-1/2 -translate-y-1/2" />
@@ -253,14 +370,49 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
             />
           </div>
 
+          {/* Date Range Filter Button */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleOpenDateFilter}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                activeDateFilterLabel
+                  ? "bg-red-50 text-primary border-primary font-semibold shadow-2xs"
+                  : "bg-bg text-secondary-text border-divider hover:bg-white hover:text-black"
+              }`}
+            >
+              <Calendar
+                className={`w-3.5 h-3.5 ${
+                  activeDateFilterLabel ? "text-primary" : "text-secondary-text"
+                }`}
+              />
+              <span>
+                {activeDateFilterLabel
+                  ? `Date: ${activeDateFilterLabel}`
+                  : "Date Filter"}
+              </span>
+            </button>
+            {activeDateFilterLabel && (
+              <button
+                type="button"
+                onClick={handleResetDateFilter}
+                title="Clear date filter"
+                className="p-1.5 rounded-lg border border-divider bg-bg hover:bg-red-50 hover:text-primary text-secondary-text transition cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => refetch()}
+            disabled={isFetching}
             title="Refresh logs"
-            className="p-1.5 rounded-lg border border-divider bg-bg hover:bg-white text-secondary-text hover:text-black transition cursor-pointer"
+            className="p-1.5 rounded-lg border border-divider bg-bg hover:bg-white text-secondary-text hover:text-black transition cursor-pointer disabled:opacity-50"
           >
             <RefreshCw
-              className={`w-4 h-4 ${apiLoading ? "animate-spin text-primary" : ""}`}
+              className={`w-4 h-4 ${isFetching ? "animate-spin text-primary" : ""}`}
             />
           </button>
 
@@ -302,8 +454,8 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
           const isActive = selectedFilter === opt.key;
           const count =
             opt.key === "ALL"
-              ? logs.length
-              : logs.filter((l) => matchesCategory(l, opt.key)).length;
+              ? dateFilteredLogs.length
+              : dateFilteredLogs.filter((l) => matchesCategory(l, opt.key)).length;
 
           return (
             <button
@@ -332,10 +484,29 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
             </button>
           );
         })}
+
+        {activeDateFilterLabel && (
+          <div className="flex items-center gap-1.5 ml-auto shrink-0 bg-red-50 text-primary border border-primary/20 px-2.5 py-1 rounded-full text-xs">
+            <span className="flex items-center gap-1 font-medium">
+              <Calendar className="w-3 h-3 text-primary" />
+              <span>
+                Date: <strong>{activeDateFilterLabel}</strong>
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={handleResetDateFilter}
+              title="Clear date filter"
+              className="p-0.5 rounded-full hover:bg-primary/10 transition cursor-pointer"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Loading & Empty State */}
-      {apiLoading ? (
+      {(apiLoading || isFetching) && logs.length === 0 ? (
         <div className="py-12 flex flex-col items-center justify-center text-center bg-bg/40 rounded-xl border border-dashed border-divider my-2 p-4">
           <ActivityIndicator size={40} />
           <p className="text-xs text-secondary-text mt-3">Loading user activity logs...</p>
@@ -349,13 +520,36 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
             No User Activity Logs Found
           </p>
           <p className="text-xs text-secondary-text max-w-sm mt-1">
-            {searchQuery || selectedFilter !== "ALL"
+            {searchQuery || selectedFilter !== "ALL" || startDate || endDate
               ? "No activities match your selected search or filter criteria. Try resetting the filters."
               : "No activity logs have been recorded for this user yet."}
           </p>
+          {(selectedFilter !== "ALL" || searchQuery || startDate || endDate) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedFilter("ALL");
+                setSearchQuery("");
+                setStartDate("");
+                setEndDate("");
+                setTempStartDate("");
+                setTempEndDate("");
+                setCurrentPage(1);
+              }}
+              className="mt-3 text-xs font-semibold text-primary hover:underline cursor-pointer"
+            >
+              Reset Filters
+            </button>
+          )}
         </div>
-      ) : viewMode === "timeline" ? (
-        /* TIMELINE VIEW */
+      ) : (
+        <div
+          className={`relative transition-opacity duration-200 ${
+            isPlaceholderData ? "opacity-60 pointer-events-none" : "opacity-100"
+          }`}
+        >
+          {viewMode === "timeline" ? (
+            /* TIMELINE VIEW */
         <div className="relative pl-5 sm:pl-7 mt-3 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-divider">
           {paginatedLogs.map((log, index) => {
             const badge = getActionBadge(log.actionType);
@@ -379,6 +573,25 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
                   {/* Card Header Row */}
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div className="flex flex-wrap items-center gap-2">
+                      {/* Actor Role & Name Badge */}
+                      {log.actorRole && (
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold border tracking-wider ${
+                            log.actorType === "admin"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : log.actorType === "club_owner"
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          }`}
+                        >
+                          <User className="w-3 h-3" />
+                          <span>{log.actorRole}</span>
+                          {log.actorName && (
+                            <span className="font-normal opacity-85">({log.actorName})</span>
+                          )}
+                        </span>
+                      )}
+
                       {/* Action Type Badge */}
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold border tracking-wider ${badge.bg}`}
@@ -468,6 +681,7 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
           <table className="w-full text-left text-sm min-w-175">
             <thead className="bg-bg text-secondary-text font-semibold text-xs uppercase border-b border-divider">
               <tr>
+                <th className="py-3 px-4">Actor</th>
                 <th className="py-3 px-4">Action</th>
                 <th className="py-3 px-4">Entity</th>
                 <th className="py-3 px-4 min-w-55">Description</th>
@@ -489,6 +703,27 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
                     key={log.createdAt + index}
                     className="hover:bg-bg/40 transition-colors"
                   >
+                    {/* Actor */}
+                    <td className="py-3.5 px-4 align-top">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border tracking-wider ${
+                          log.actorType === "admin"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : log.actorType === "club_owner"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        }`}
+                      >
+                        <User className="w-3 h-3" />
+                        <span>{log.actorRole || "Client"}</span>
+                      </span>
+                      {log.actorName && (
+                        <div className="text-[11px] text-secondary-text mt-1 truncate max-w-30">
+                          {log.actorName}
+                        </div>
+                      )}
+                    </td>
+
                     {/* Action */}
                     <td className="py-3.5 px-4 align-top">
                       <span
@@ -538,6 +773,8 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
           </table>
         </div>
       )}
+    </div>
+  )}
 
       {/* Pagination Footer */}
       {totalLogs > 0 && (
@@ -655,6 +892,167 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
           )}
         </div>
       )}
+
+      {/* Date Filter Popover */}
+      <Popover
+        open={Boolean(dateFilterAnchorEl)}
+        anchorEl={dateFilterAnchorEl}
+        onClose={handleCloseDateFilter}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        PaperProps={{
+          className:
+            "p-4 w-72 rounded-2xl shadow-xl border border-gray-100 bg-white mt-1.5",
+        }}
+      >
+        <div className="flex flex-col gap-3.5">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold text-gray-800">
+                Filter by Date
+              </span>
+            </div>
+            {(tempStartDate || tempEndDate) && (
+              <button
+                type="button"
+                onClick={handleResetDateFilter}
+                className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Quick Presets */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+              Quick Presets
+            </label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                {
+                  label: "Today",
+                  getRange: () => ({
+                    start: toLocalDate().format("YYYY-MM-DD"),
+                    end: toLocalDate().format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "Yesterday",
+                  getRange: () => ({
+                    start: toLocalDate().subtract(1, "day").format("YYYY-MM-DD"),
+                    end: toLocalDate().subtract(1, "day").format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "Last 7 Days",
+                  getRange: () => ({
+                    start: toLocalDate().subtract(6, "day").format("YYYY-MM-DD"),
+                    end: toLocalDate().format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "Last 30 Days",
+                  getRange: () => ({
+                    start: toLocalDate().subtract(29, "day").format("YYYY-MM-DD"),
+                    end: toLocalDate().format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "This Month",
+                  getRange: () => ({
+                    start: toLocalDate().startOf("month").format("YYYY-MM-DD"),
+                    end: toLocalDate().endOf("month").format("YYYY-MM-DD"),
+                  }),
+                },
+                {
+                  label: "All Time",
+                  getRange: () => ({
+                    start: "",
+                    end: "",
+                  }),
+                },
+              ].map((preset) => {
+                const range = preset.getRange();
+                const isSelected =
+                  tempStartDate === range.start && tempEndDate === range.end;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      setTempStartDate(range.start);
+                      setTempEndDate(range.end);
+                    }}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border text-left ${
+                      isSelected
+                        ? "bg-red-50 text-primary border-primary font-semibold"
+                        : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Custom Date Range Inputs */}
+          <div className="flex flex-col gap-2 pt-1 border-t border-gray-100">
+            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+              Custom Range
+            </label>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] text-gray-600 font-medium">
+                  From:
+                </span>
+                <input
+                  type="date"
+                  value={tempStartDate}
+                  onChange={(e) => setTempStartDate(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs text-gray-800 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] text-gray-600 font-medium">To:</span>
+                <input
+                  type="date"
+                  value={tempEndDate}
+                  onChange={(e) => setTempEndDate(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs text-gray-800 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={handleCloseDateFilter}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleApplyDateFilter}
+              className="px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 text-xs font-semibold shadow-xs cursor-pointer"
+            >
+              Apply Filter
+            </button>
+          </div>
+        </div>
+      </Popover>
     </CustomBox>
   );
 };

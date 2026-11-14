@@ -14,6 +14,7 @@ import {
   ListFilter,
   Edit3,
   Building,
+  User,
   Info,
   ArrowRight,
   MinusCircle,
@@ -485,6 +486,25 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
                   {/* Card Header Row: actionType, entityName, and createdAt */}
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div className="flex flex-wrap items-center gap-2">
+                      {/* Actor Role & Name Badge */}
+                      {log.actorRole && (
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold border tracking-wider ${
+                            log.actorType === "admin"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : log.actorType === "client"
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          }`}
+                        >
+                          <User className="w-3 h-3" />
+                          <span>{log.actorRole}</span>
+                          {log.actorName && (
+                            <span className="font-normal opacity-85">({log.actorName})</span>
+                          )}
+                        </span>
+                      )}
+
                       {/* actionType */}
                       <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold border tracking-wider bg-blue-50 text-blue-700 border-blue-200">
                         {log.actionType}
@@ -661,6 +681,7 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
           <table className="w-full text-left text-sm min-w-175">
             <thead className="bg-bg text-secondary-text font-semibold text-xs uppercase border-b border-divider">
               <tr>
+                <th className="py-3 px-4">Actor</th>
                 <th className="py-3 px-4">Action</th>
                 <th className="py-3 px-4">Entity & Field</th>
                 <th className="py-3 px-4 min-w-47.5">Before</th>
@@ -683,6 +704,27 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
                     key={log.createdAt + index}
                     className="hover:bg-bg/40 transition-colors"
                   >
+                    {/* Actor */}
+                    <td className="py-3.5 px-4 align-top">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border tracking-wider ${
+                          log.actorType === "admin"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : log.actorType === "client"
+                            ? "bg-purple-50 text-purple-700 border-purple-200"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        }`}
+                      >
+                        <User className="w-3 h-3" />
+                        <span>{log.actorRole || "Club Owner"}</span>
+                      </span>
+                      {log.actorName && (
+                        <div className="text-[11px] text-secondary-text mt-1 truncate max-w-[120px]">
+                          {log.actorName}
+                        </div>
+                      )}
+                    </td>
+
                     {/* Action Type */}
                     <td className="py-3.5 px-4 align-top">
                       <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-bold border tracking-wider bg-blue-50 text-blue-700 border-blue-200">

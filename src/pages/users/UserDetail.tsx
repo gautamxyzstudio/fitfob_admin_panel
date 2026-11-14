@@ -121,7 +121,7 @@ const UserDetail = () => {
           onClick={() => navigate("/users")}
           className="cursor-pointer hover:underline text-secondary-text"
         >
-          All Club Requests
+          All Users List
         </span>
         <span className="mx-1">&gt;</span>
         <span className="font-semibold text-black">User Detail Page</span>

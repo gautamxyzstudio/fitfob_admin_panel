@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseQueryOptions,
+} from "@tanstack/react-query";
 import {
   getClientActivityLogsApi,
   getClientCheckinsApi,
@@ -110,23 +116,35 @@ export const useUpdateClient = () => {
 /**
  * Hook to fetch client activity logs by documentId
  */
-export const useClientActivityLogs = (documentId?: string) => {
-  const { data, isLoading, isFetching, error, refetch } = useQuery<
-    ClientActivityLog[]
-  >({
+export function useClientActivityLogs<TData = ClientActivityLog[]>(
+  documentId?: string,
+  options?: Omit<
+    UseQueryOptions<ClientActivityLog[], Error, TData, any>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery<ClientActivityLog[], Error, TData, any>({
     queryKey: ["clientActivityLogs", documentId],
     queryFn: () => getClientActivityLogsApi(documentId || ""),
     enabled: Boolean(documentId),
     refetchInterval: 30000,
+    placeholderData: keepPreviousData,
+    ...options,
   });
 
+  const activityLogs: TData = (query.data ?? []) as unknown as TData;
+
   return {
-    activityLogs: data || [],
-    loading: isLoading || isFetching,
-    error: error ? (error as Error).message : null,
-    refetch,
+    ...query,
+    activityLogs,
+    loading: query.isLoading,
+    isInitialLoading: query.isLoading && !query.data,
+    isFetching: query.isFetching,
+    isPlaceholderData: query.isPlaceholderData,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
   };
-};
+}
 
 /**
  * Hook to fetch client check-ins

@@ -194,7 +194,10 @@ export const getClubOwnerActivityLogsApi = async (
         Authorization: `Bearer ${token}`,
       },
     });
-    return response.data || [];
+    const rawData = response.data;
+    if (Array.isArray(rawData)) return rawData;
+    if (Array.isArray(rawData?.data)) return rawData.data;
+    return [];
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(

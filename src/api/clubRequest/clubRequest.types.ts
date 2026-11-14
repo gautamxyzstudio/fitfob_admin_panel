@@ -1,11 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ClubOwnerActivityLog {
   id?: string | number;
+  documentId?: string;
+  actorType?: "admin" | "club_owner" | "client" | string;
+  actorName?: string;
+  actorRole?: string;
   createdAt: string;
   description: string;
   entityName: string;
+  entityId?: string;
   actionType: string;
-  clubOwnerDocumentId: string;
+  clubOwnerDocumentId?: string;
 }
 
 export interface ClubPhotoItem {

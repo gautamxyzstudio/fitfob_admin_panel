@@ -34,8 +34,7 @@ export const EndPoints = {
 
   // Club Services (Club Types)
   clubServices: `${BASE_URL}/api/club-services`,
-  clubServiceById: (docId: string) =>
-    `${BASE_URL}/api/club-services/${docId}`,
+  clubServiceById: (docId: string) => `${BASE_URL}/api/club-services/${docId}`,
 
   // Upload
   upload: `${BASE_URL}/api/upload`,
@@ -68,4 +67,8 @@ export const EndPoints = {
   // Gym Contract
   gymContract: (documentId: string) =>
     `${BASE_URL}/api/gym-contract/${documentId}`,
+
+  // Free Trial Settings
+  trialSettings: (clubOwnerDocumentId: string) =>
+    `${BASE_URL}/api/trial-settings/${clubOwnerDocumentId}`,
 };

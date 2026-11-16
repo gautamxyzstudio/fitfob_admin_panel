@@ -33,12 +33,15 @@ import {
   ExternalLink,
   Eye,
   FileText,
+  Sparkles,
   X,
 } from "lucide-react";
 import { formatLocalDate } from "../../utility/dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
 import ClubOwnerLogs from "../../components/modules/clubLogs/ClubOwnerLogs";
 import GymContractModal from "../../components/modules/gymContract/GymContractModal";
+import FreeTrialModal from "../../components/modules/trialSettings/FreeTrialModal";
+import { useTrialSettings } from "../../hooks/trialSettings/useTrialSettings";
 
 const PRESET_REJECTION_REASONS = [
   "Invalid or unclear government documents",
@@ -89,6 +92,15 @@ const ViewClubRequest = () => {
 
   // Gym Contract & Commission Modal state
   const [contractModalOpen, setContractModalOpen] = useState(false);
+
+  // Free Trial Modal state
+  const [trialModalOpen, setTrialModalOpen] = useState(false);
+  const clubOwnerDocumentId =
+    selectedOwner?.documentId || (selectedOwner as any)?.clubOwnerDocumentId || "";
+  const { trialSettings } = useTrialSettings(
+    clubOwnerDocumentId,
+    Boolean(clubOwnerDocumentId),
+  );
 
   useEffect(() => {
     if (selectedOwner) {
@@ -376,6 +388,14 @@ const ViewClubRequest = () => {
 
             <div className="flex flex-row gap-x-3 items-center">
               <button
+                type="button"
+                onClick={() => setTrialModalOpen(true)}
+                title="Configure Free Trial"
+                className="bg-background hover:bg-red-50 text-secondary-text hover:text-primary w-12 h-12 rounded p-2.5 flex items-center justify-center cursor-pointer transition border border-divider shadow-xs"
+              >
+                <Sparkles className="w-5 h-5 text-primary" />
+              </button>
+              <button
                 onClick={() => console.log("Chat")}
                 className="bg-red w-12 h-12 rounded p-2.5 items-center cursor-pointer "
               >
@@ -461,9 +481,65 @@ const ViewClubRequest = () => {
         </CustomBox>
       )}
 
+      {/* Free Trial Program Quick-Access Card */}
+      <CustomBox customClasses="p-4 px-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-red-100/70 bg-linear-to-r from-red-50/20 via-white to-white">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-red-100/80 text-primary flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 stroke-2" />
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm sm:text-base font-bold text-[#1C1C1C]">
+                Free Trial Program
+              </h3>
+              {trialSettings?.isTrialEnabled ? (
+                <span className="bg-[#DCFCE7] text-[#15803D] text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                  Active ({trialSettings.dailyTrialLimit} Passes/Day)
+                </span>
+              ) : (
+                <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                  Trials Disabled
+                </span>
+              )}
+            </div>
+
+            <span className="text-xs text-[#787571] mt-0.5">
+              {trialSettings?.isTrialEnabled
+                ? `Daily capacity: ${trialSettings.dailyTrialLimit} guests • Availability determined by club schedule`
+                : "Allow prospective members to claim a 1-day free pass at this club"}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setTrialModalOpen(true)}
+          className="bg-primary hover:bg-[#c82333] active:scale-[0.98] text-white px-4 py-2.5 rounded-xl font-medium text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-end sm:self-center"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Configure Free Trial</span>
+        </button>
+      </CustomBox>
+
       {/* Club Information */}
       <CustomBox customClasses="p-4">
-        <h2 className="text-lg font-medium">Club Information</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Club Information</h2>
+          <button
+            type="button"
+            onClick={() => setTrialModalOpen(true)}
+            className="text-xs text-primary font-semibold hover:underline flex items-center gap-1.5 cursor-pointer bg-red-50 hover:bg-red-100/70 px-2.5 py-1 rounded-md transition"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>
+              Free Trial:{" "}
+              {trialSettings?.isTrialEnabled
+                ? `Active (${trialSettings.dailyTrialLimit}/day)`
+                : "Disabled"}
+            </span>
+          </button>
+        </div>
         <div className="mt-3 flex flex-row w-full flex-wrap gap-y-3.75">
           <InfoField label="Owner’s name" value={selectedOwner?.ownerName} customClasses="capitalize" />
           <InfoField label="Email Address" value={selectedOwner?.email} />
@@ -472,6 +548,14 @@ const ViewClubRequest = () => {
           <InfoField
             label="Club Category"
             value={selectedOwner?.clubCategory}
+          />
+          <InfoField
+            label="Free Trial"
+            value={
+              trialSettings?.isTrialEnabled
+                ? `Enabled (${trialSettings.dailyTrialLimit} passes/day)`
+                : "Disabled"
+            }
           />
         </div>
         <WeeklySchedule
@@ -1169,6 +1253,15 @@ const ViewClubRequest = () => {
         clubName={selectedOwner?.clubName}
         city={selectedOwner?.city}
         onSaveSuccess={() => refetch()}
+      />
+
+      {/* Free Trial Program Configurator Modal */}
+      <FreeTrialModal
+        open={trialModalOpen}
+        onClose={() => setTrialModalOpen(false)}
+        clubOwnerDocumentId={clubOwnerDocumentId}
+        clubName={selectedOwner?.clubName}
+        schedulingData={schedulingData}
       />
     </div>
   );

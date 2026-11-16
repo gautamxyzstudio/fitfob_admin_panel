@@ -396,18 +396,16 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
 
         {/* Card 2: ZERO-COMMISSION DEAL (Read-only status, no toggle switch) */}
         <div
-          className={`border rounded-2xl p-5 flex flex-col justify-between shadow-2xs transition-colors ${
-            zeroCommissionDeal
-              ? "border-[#DCFCE7] bg-[#F0FDF4]/60"
-              : "border-gray-200 bg-gray-50/70"
-          }`}
+          className={`border rounded-2xl p-5 flex flex-col justify-between shadow-2xs transition-colors ${zeroCommissionDeal
+            ? "border-[#DCFCE7] bg-[#F0FDF4]/60"
+            : "border-gray-200 bg-gray-50/70"
+            }`}
         >
           <div>
             <div className="flex items-center justify-between">
               <span
-                className={`text-[11px] font-bold uppercase tracking-wider ${
-                  zeroCommissionDeal ? "text-[#166534]" : "text-gray-500"
-                }`}
+                className={`text-[11px] font-bold uppercase tracking-wider ${zeroCommissionDeal ? "text-[#166534]" : "text-gray-500"
+                  }`}
               >
                 ZERO-COMMISSION DEAL
               </span>
@@ -431,9 +429,8 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
 
           {/* Limit Input Box */}
           <div
-            className={`bg-white border rounded-xl px-3.5 py-2 flex items-center gap-2 mt-3 shadow-2xs ${
-              zeroCommissionDeal ? "border-[#BBF7D0]" : "border-gray-200 opacity-60"
-            }`}
+            className={`bg-white border rounded-xl px-3.5 py-2 flex items-center gap-1 mt-3 shadow-2xs ${zeroCommissionDeal ? "border-[#BBF7D0]" : "border-gray-200 opacity-60"
+              }`}
           >
             <span className="text-xs font-semibold text-[#4B5563]">Limit:</span>
             <input
@@ -444,7 +441,7 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                 const digits = e.target.value.replace(/\D/g, "");
                 setZeroCommissionLimit(digits);
               }}
-              className="w-16 text-sm font-bold text-[#1C1C1C] focus:outline-none disabled:text-gray-400 disabled:bg-transparent"
+              className="w-3 text-sm font-bold text-[#1C1C1C] focus:outline-none disabled:text-gray-400 disabled:bg-transparent"
               placeholder="20"
             />
             <span className="text-xs font-medium text-[#6B7280]">Users</span>
@@ -494,11 +491,10 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
               <td className="p-4 border-l border-[#E5E7EB]">
                 <div className="flex flex-col gap-1.5">
                   <div
-                    className={`bg-white border rounded-lg px-3 py-2 flex items-center focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs transition-all ${
-                      commissionModes.monthly === "custom"
-                        ? "border-amber-300 bg-amber-50/20"
-                        : "border-[#E5E7EB]"
-                    }`}
+                    className={`bg-white border rounded-lg px-3 py-2 flex items-center focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs transition-all ${commissionModes.monthly === "custom"
+                      ? "border-amber-300 bg-amber-50/20"
+                      : "border-[#E5E7EB]"
+                      }`}
                   >
                     <span className="text-sm font-semibold text-[#1C1C1C] mr-1">
                       ₹
@@ -513,11 +509,10 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                       placeholder={String(monthlyDefaultComm)}
                     />
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${
-                        commissionModes.monthly === "custom"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${commissionModes.monthly === "custom"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-gray-100 text-gray-500"
+                        }`}
                     >
                       {commissionModes.monthly === "custom"
                         ? "Custom"
@@ -556,11 +551,10 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
               <td className="p-4 border-l border-[#E5E7EB]">
                 <div className="flex flex-col gap-1.5">
                   <div
-                    className={`bg-white border rounded-lg px-3 py-2 flex items-center focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs transition-all ${
-                      commissionModes.biAnnually === "custom"
-                        ? "border-amber-300 bg-amber-50/20"
-                        : "border-[#E5E7EB]"
-                    }`}
+                    className={`bg-white border rounded-lg px-3 py-2 flex items-center focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs transition-all ${commissionModes.biAnnually === "custom"
+                      ? "border-amber-300 bg-amber-50/20"
+                      : "border-[#E5E7EB]"
+                      }`}
                   >
                     <span className="text-sm font-semibold text-[#1C1C1C] mr-1">
                       ₹
@@ -575,11 +569,10 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                       placeholder={String(biAnnualDefaultComm)}
                     />
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${
-                        commissionModes.biAnnually === "custom"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${commissionModes.biAnnually === "custom"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-gray-100 text-gray-500"
+                        }`}
                     >
                       {commissionModes.biAnnually === "custom"
                         ? "Custom"
@@ -618,11 +611,10 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
               <td className="p-4 border-l border-[#E5E7EB]">
                 <div className="flex flex-col gap-1.5">
                   <div
-                    className={`bg-white border rounded-lg px-3 py-2 flex items-center focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs transition-all ${
-                      commissionModes.annually === "custom"
-                        ? "border-amber-300 bg-amber-50/20"
-                        : "border-[#E5E7EB]"
-                    }`}
+                    className={`bg-white border rounded-lg px-3 py-2 flex items-center focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs transition-all ${commissionModes.annually === "custom"
+                      ? "border-amber-300 bg-amber-50/20"
+                      : "border-[#E5E7EB]"
+                      }`}
                   >
                     <span className="text-sm font-semibold text-[#1C1C1C] mr-1">
                       ₹
@@ -637,11 +629,10 @@ const GymContractContent: React.FC<GymContractContentProps> = ({
                       placeholder={String(annualDefaultComm)}
                     />
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${
-                        commissionModes.annually === "custom"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto ${commissionModes.annually === "custom"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-gray-100 text-gray-500"
+                        }`}
                     >
                       {commissionModes.annually === "custom"
                         ? "Custom"

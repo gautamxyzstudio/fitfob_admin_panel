@@ -871,7 +871,6 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
           )}
         </div>
       )}
-
       {/* Pagination Footer */}
       {totalLogs > 0 && (
         <div className="mt-4 pt-3.5 border-t border-divider flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">

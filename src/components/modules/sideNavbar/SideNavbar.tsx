@@ -19,7 +19,7 @@ const SideNavBar = () => {
   const { unverifiedOwners } = useUnverifiedOwners("", "pending");
   
   return (
-    <CustomBox customClasses="p-5 pt-4.5 flex w-[16%] h-full flex-col justify-between items-center overflow-clip overflow-y-scroll scrollbar-hide">
+    <CustomBox customClasses="p-5 pt-4.5 flex w-[17%] h-full flex-col justify-between items-center overflow-clip overflow-y-scroll scrollbar-hide">
       <div className="w-full h-full flex flex-col gap-y-8">
         <Link to="/" className="flex flex-row gap-x-1.75 items-center">
           <img className="w-auto h-8" src={ICONS.FITFOB} alt="Fitfob" />

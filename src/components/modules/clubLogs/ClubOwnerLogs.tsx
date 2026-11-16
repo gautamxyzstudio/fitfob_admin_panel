@@ -41,7 +41,7 @@ import type {
   ClubResponse,
 } from "../../../api/clubRequest/clubRequest.types";
 import { useClubOwnerActivityLogs } from "../../../hooks/clubOwner/useClubOwner";
-import { computeItemizedDiff, isListField, matchesLogCategory, parseLogDescription, renderNewValueDiff, renderOldValueDiff } from "./clubOwerLog";
+import { computeItemizedDiff, isListField, matchesLogCategory, parseLogDescription, renderNewValueDiff, renderOldValueDiff } from "./OwnerLog";
 
 interface ClubOwnerLogsProps {
   owner?: ClubResponse | null;
@@ -458,422 +458,419 @@ export const ClubOwnerLogs: React.FC<ClubOwnerLogsProps> = ({
         </div>
       ) : (
         <div
-          className={`relative transition-opacity duration-200 ${
-            isPlaceholderData ? "opacity-60 pointer-events-none" : "opacity-100"
-          }`}
+          className={`relative transition-opacity duration-200 ${isPlaceholderData ? "opacity-60 pointer-events-none" : "opacity-100"
+            }`}
         >
           {viewMode === "timeline" ? (
             /* TIMELINE VIEW */
             <div className="relative pl-5 sm:pl-7 mt-3 space-y-5 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-divider">
-          {paginatedLogs.map((log, index) => {
-            const parsed = parseLogDescription(log.description);
-            const EntityIcon = getEntityIcon(log.entityName);
-            const formattedDate = formatLocalDateTime(
-              log.createdAt,
-              "DD MMM YYYY • hh:mm A"
-            );
-            const relativeTimeStr = formatLocalFromNow(log.createdAt);
-
-            return (
-              <div key={log.createdAt + index} className="relative group">
-                {/* Node icon */}
-                <div className="absolute -left-5 sm:-left-7 top-2 w-5 sm:w-6 h-5 sm:h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md ring-4 ring-white z-10">
-                  <Edit3 className="w-3 h-3" />
-                </div>
-
-                {/* Card Container */}
-                <div className="bg-bg/60 hover:bg-bg border border-divider rounded-xl p-3.5 sm:p-4 transition-all duration-200 hover:shadow-xs">
-                  {/* Card Header Row: actionType, entityName, and createdAt */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* Actor Role & Name Badge */}
-                      {log.actorRole && (
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold border tracking-wider ${
-                            log.actorType === "admin"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : log.actorType === "client"
-                              ? "bg-purple-50 text-purple-700 border-purple-200"
-                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          }`}
-                        >
-                          <User className="w-3 h-3" />
-                          <span>{log.actorRole}</span>
-                          {log.actorName && (
-                            <span className="font-normal opacity-85">({log.actorName})</span>
-                          )}
-                        </span>
-                      )}
-
-                      {/* actionType */}
-                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold border tracking-wider bg-blue-50 text-blue-700 border-blue-200">
-                        {log.actionType}
-                      </span>
-
-                      {/* entityName */}
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium border bg-white border-divider text-black">
-                        <EntityIcon className="w-3.5 h-3.5 text-secondary-text" />
-                        {log.entityName}
-                      </span>
-                    </div>
-
-                    {/* createdAt */}
-                    <div className="flex items-center gap-1.5 text-xs text-secondary-text">
-                      <Clock className="w-3.5 h-3.5 text-secondary-text" />
-                      <span className="font-medium text-black">
-                        {formattedDate}
-                      </span>
-                      <span className="text-secondary-text/80 text-[11px] hidden sm:inline">
-                        ({relativeTimeStr})
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Main Description */}
-                  <p className="text-xs sm:text-sm font-medium text-black leading-relaxed">
-                    {parsed.mainText}
-                  </p>
-
-                  {/* RENDER FIELD CHANGES */}
-                  {parsed.fieldChanges && parsed.fieldChanges.length > 0 && (
-                    <div className="mt-3 space-y-3">
-                      {parsed.fieldChanges.map((change, cIdx) => {
-                        const isList = isListField(change.fieldName);
-                        const itemizedDiff = computeItemizedDiff(
-                          change.oldValue,
-                          change.newValue,
-                          change.fieldName
-                        );
-                        // Check if ANY item was actually removed
-                        const hasActualRemovals =
-                          isList && itemizedDiff.removedItems.length > 0;
-
-                        return (
-                          <div
-                            key={change.fieldName + cIdx}
-                            className="p-3 sm:p-3.5 rounded-xl bg-white border border-divider shadow-2xs"
-                          >
-                            <div className="flex items-center gap-2 mb-2.5">
-                              {change.fieldName.toLowerCase().includes("address") ? (
-                                <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                              ) : (
-                                <SlidersHorizontal className="w-3.5 h-3.5 text-secondary-text" />
-                              )}
-                              <span className="text-[11px] font-semibold uppercase tracking-wider text-secondary-text">
-                                Modified Field:
-                              </span>
-                              <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                                {change.fieldName}
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-2.5 sm:gap-3">
-                              {/* LEFT BOX: If items removed -> "Removed (-)" in red. If nothing removed -> "Previous" in neutral slate! */}
-                              <div
-                                className={`p-3 rounded-lg flex flex-col justify-between ${hasActualRemovals
-                                  ? "bg-rose-50/80 border border-rose-200"
-                                  : "bg-slate-50/90 border border-slate-200"
-                                  }`}
-                              >
-                                <div
-                                  className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide mb-1.5 ${hasActualRemovals
-                                    ? "text-rose-700"
-                                    : "text-slate-700"
-                                    }`}
-                                >
-                                  {hasActualRemovals ? (
-                                    <>
-                                      <MinusCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                                      <span>Removed (-)</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                                      <span>Previous</span>
-                                    </>
-                                  )}
-                                </div>
-                                <div
-                                  className={`p-2.5 rounded ${hasActualRemovals
-                                    ? "bg-white/80 border border-rose-200/60"
-                                    : "bg-white border border-slate-200/80"
-                                    }`}
-                                >
-                                  {renderOldValueDiff(
-                                    change.oldValue,
-                                    change.newValue,
-                                    change.fieldName
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Arrow separator */}
-                              <div className="flex justify-center text-secondary-text py-1 md:py-0">
-                                <div className="w-7 h-7 rounded-full bg-bg border border-divider flex items-center justify-center text-secondary-text shadow-2xs">
-                                  <ArrowRight className="w-4 h-4 text-primary" />
-                                </div>
-                              </div>
-
-                              {/* RIGHT BOX: "Added (+)" if additions, otherwise "Updated" */}
-                              <div className="p-3 rounded-lg bg-emerald-50/80 border border-emerald-200 flex flex-col justify-between">
-                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5">
-                                  {isList && itemizedDiff.addedItems.length > 0 ? (
-                                    <>
-                                      <PlusCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                      <span>Added (+)</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                      <span>Updated</span>
-                                    </>
-                                  )}
-                                </div>
-                                <div className="bg-white/80 p-2.5 rounded border border-emerald-200/60">
-                                  {renderNewValueDiff(
-                                    change.oldValue,
-                                    change.newValue,
-                                    change.fieldName
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Itemized tags ONLY for list fields (like facilities/amenities) */}
-                            {itemizedDiff.hasListDiff && (
-                              <div className="mt-3 pt-2.5 border-t border-divider flex flex-wrap items-center gap-2">
-                                <span className="text-[11px] font-semibold text-secondary-text">
-                                  Item Details:
-                                </span>
-                                {itemizedDiff.removedItems.map((item) => (
-                                  <span
-                                    key={item}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[11px] font-medium border border-rose-300"
-                                  >
-                                    <Minus className="w-3 h-3 text-rose-600" />
-                                    Removed: {item}
-                                  </span>
-                                ))}
-                                {itemizedDiff.addedItems.map((item) => (
-                                  <span
-                                    key={item}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-medium border border-emerald-300"
-                                  >
-                                    <Plus className="w-3 h-3 text-emerald-600" />
-                                    Added: {item}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* TABLE VIEW WITH PROPER BEFORE & NOW COLUMNS */
-        <div className="mt-3 overflow-x-auto rounded-xl border border-divider">
-          <table className="w-full text-left text-sm min-w-175">
-            <thead className="bg-bg text-secondary-text font-semibold text-xs uppercase border-b border-divider">
-              <tr>
-                <th className="py-3 px-4">Actor</th>
-                <th className="py-3 px-4">Action</th>
-                <th className="py-3 px-4">Entity & Field</th>
-                <th className="py-3 px-4 min-w-47.5">Before</th>
-                <th className="py-3 px-4 min-w-47.5">Now</th>
-                <th className="py-3 px-4 min-w-40">Date & Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-divider bg-white">
               {paginatedLogs.map((log, index) => {
                 const parsed = parseLogDescription(log.description);
                 const EntityIcon = getEntityIcon(log.entityName);
                 const formattedDate = formatLocalDateTime(
                   log.createdAt,
-                  "DD MMM YYYY, hh:mm A"
+                  "DD MMM YYYY • hh:mm A"
                 );
                 const relativeTimeStr = formatLocalFromNow(log.createdAt);
 
                 return (
-                  <tr
-                    key={log.createdAt + index}
-                    className="hover:bg-bg/40 transition-colors"
-                  >
-                    {/* Actor */}
-                    <td className="py-3.5 px-4 align-top">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border tracking-wider ${
-                          log.actorType === "admin"
-                            ? "bg-amber-50 text-amber-700 border-amber-200"
-                            : log.actorType === "client"
-                            ? "bg-purple-50 text-purple-700 border-purple-200"
-                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        }`}
-                      >
-                        <User className="w-3 h-3" />
-                        <span>{log.actorRole || "Club Owner"}</span>
-                      </span>
-                      {log.actorName && (
-                        <div className="text-[11px] text-secondary-text mt-1 truncate max-w-[120px]">
-                          {log.actorName}
-                        </div>
-                      )}
-                    </td>
+                  <div key={log.createdAt + index} className="relative group">
+                    {/* Node icon */}
+                    <div className="absolute -left-5 sm:-left-7 top-2 w-5 sm:w-6 h-5 sm:h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md ring-4 ring-white z-10">
+                      <Edit3 className="w-3 h-3" />
+                    </div>
 
-                    {/* Action Type */}
-                    <td className="py-3.5 px-4 align-top">
-                      <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-bold border tracking-wider bg-blue-50 text-blue-700 border-blue-200">
-                        {log.actionType}
-                      </span>
-                    </td>
+                    {/* Card Container */}
+                    <div className="bg-bg/60 hover:bg-bg border border-divider rounded-xl p-3.5 sm:p-4 transition-all duration-200 hover:shadow-xs">
+                      {/* Card Header Row: actionType, entityName, and createdAt */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Actor Role & Name Badge */}
+                          {log.actorRole && (
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold border tracking-wider ${log.actorType === "admin"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : log.actorType === "client"
+                                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                }`}
+                            >
+                              <User className="w-3 h-3" />
+                              <span>{log.actorName}</span>
+                              {log.actorRole && (
+                                <span className="font-normal opacity-85">({log.actorRole})</span>
+                              )}
+                            </span>
+                          )}
 
-                    {/* Entity & Field Name */}
-                    <td className="py-3.5 px-4 align-top">
-                      <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-bg border border-divider text-xs font-medium text-black mb-1">
-                        <EntityIcon className="w-3 h-3 text-secondary-text" />
-                        {log.entityName}
-                      </div>
-                      {parsed.fieldChanges.map((fc) => (
-                        <div
-                          key={fc.fieldName}
-                          className="text-[11px] font-mono text-secondary-text"
-                        >
-                          Field:{" "}
-                          <span className="text-black font-semibold">
-                            {fc.fieldName}
+                          {/* actionType */}
+                          <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold border tracking-wider bg-blue-50 text-blue-700 border-blue-200">
+                            {log.actionType}
+                          </span>
+
+                          {/* entityName */}
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium border bg-white border-divider text-black">
+                            <EntityIcon className="w-3.5 h-3.5 text-secondary-text" />
+                            {log.entityName}
                           </span>
                         </div>
-                      ))}
-                    </td>
 
-                    {/* Before */}
-                    <td className="py-3.5 px-4 align-top">
-                      {parsed.fieldChanges.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {parsed.fieldChanges.map((fc) => {
-                            const isList = isListField(fc.fieldName);
-                            const itemDiff = computeItemizedDiff(
-                              fc.oldValue,
-                              fc.newValue,
-                              fc.fieldName
+                        {/* createdAt */}
+                        <div className="flex items-center gap-1.5 text-xs text-secondary-text">
+                          <Clock className="w-3.5 h-3.5 text-secondary-text" />
+                          <span className="font-medium text-black">
+                            {formattedDate}
+                          </span>
+                          <span className="text-secondary-text/80 text-[11px] hidden sm:inline">
+                            ({relativeTimeStr})
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Main Description */}
+                      <p className="text-xs sm:text-sm font-medium text-black leading-relaxed">
+                        {parsed.mainText}
+                      </p>
+
+                      {/* RENDER FIELD CHANGES */}
+                      {parsed.fieldChanges && parsed.fieldChanges.length > 0 && (
+                        <div className="mt-3 space-y-3">
+                          {parsed.fieldChanges.map((change, cIdx) => {
+                            const isList = isListField(change.fieldName);
+                            const itemizedDiff = computeItemizedDiff(
+                              change.oldValue,
+                              change.newValue,
+                              change.fieldName
                             );
+                            // Check if ANY item was actually removed
                             const hasActualRemovals =
-                              isList && itemDiff.removedItems.length > 0;
+                              isList && itemizedDiff.removedItems.length > 0;
 
                             return (
-                              <div key={fc.fieldName}>
-                                {parsed.fieldChanges.length > 1 && (
-                                  <span className="text-[10px] uppercase font-mono font-bold text-secondary-text block mb-0.5">
-                                    {fc.fieldName}:
+                              <div
+                                key={change.fieldName + cIdx}
+                                className="p-3 sm:p-3.5 rounded-xl bg-white border border-divider shadow-2xs"
+                              >
+                                <div className="flex items-center gap-2 mb-2.5">
+                                  {change.fieldName.toLowerCase().includes("address") ? (
+                                    <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                                  ) : (
+                                    <SlidersHorizontal className="w-3.5 h-3.5 text-secondary-text" />
+                                  )}
+                                  <span className="text-[11px] font-semibold uppercase tracking-wider text-secondary-text">
+                                    Modified Field:
                                   </span>
-                                )}
-                                <div
-                                  className={`p-2 rounded text-xs wrap-break-word leading-snug ${hasActualRemovals
-                                    ? "bg-rose-50/80 border border-rose-200"
-                                    : "bg-slate-50 border border-slate-200"
-                                    }`}
-                                >
-                                  {renderOldValueDiff(
-                                    fc.oldValue,
-                                    fc.newValue,
-                                    fc.fieldName
-                                  )}
+                                  <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                    {change.fieldName}
+                                  </span>
                                 </div>
-                                {itemDiff.hasListDiff &&
-                                  itemDiff.removedItems.length > 0 && (
-                                    <div className="mt-1 flex flex-wrap gap-1">
-                                      {itemDiff.removedItems.map((item) => (
-                                        <span
-                                          key={item}
-                                          className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded border border-rose-300"
-                                        >
-                                          - {item}
-                                        </span>
-                                      ))}
+
+                                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-2.5 sm:gap-3">
+                                  {/* LEFT BOX: If items removed -> "Removed (-)" in red. If nothing removed -> "Previous" in neutral slate! */}
+                                  <div
+                                    className={`p-3 rounded-lg flex flex-col justify-between ${hasActualRemovals
+                                      ? "bg-rose-50/80 border border-rose-200"
+                                      : "bg-slate-50/90 border border-slate-200"
+                                      }`}
+                                  >
+                                    <div
+                                      className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide mb-1.5 ${hasActualRemovals
+                                        ? "text-rose-700"
+                                        : "text-slate-700"
+                                        }`}
+                                    >
+                                      {hasActualRemovals ? (
+                                        <>
+                                          <MinusCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                          <span>Removed (-)</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                          <span>Previous</span>
+                                        </>
+                                      )}
                                     </div>
-                                  )}
+                                    <div
+                                      className={`p-2.5 rounded ${hasActualRemovals
+                                        ? "bg-white/80 border border-rose-200/60"
+                                        : "bg-white border border-slate-200/80"
+                                        }`}
+                                    >
+                                      {renderOldValueDiff(
+                                        change.oldValue,
+                                        change.newValue,
+                                        change.fieldName
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Arrow separator */}
+                                  <div className="flex justify-center text-secondary-text py-1 md:py-0">
+                                    <div className="w-7 h-7 rounded-full bg-bg border border-divider flex items-center justify-center text-secondary-text shadow-2xs">
+                                      <ArrowRight className="w-4 h-4 text-primary" />
+                                    </div>
+                                  </div>
+
+                                  {/* RIGHT BOX: "Added (+)" if additions, otherwise "Updated" */}
+                                  <div className="p-3 rounded-lg bg-emerald-50/80 border border-emerald-200 flex flex-col justify-between">
+                                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5">
+                                      {isList && itemizedDiff.addedItems.length > 0 ? (
+                                        <>
+                                          <PlusCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                          <span>Added (+)</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                          <span>Updated</span>
+                                        </>
+                                      )}
+                                    </div>
+                                    <div className="bg-white/80 p-2.5 rounded border border-emerald-200/60">
+                                      {renderNewValueDiff(
+                                        change.oldValue,
+                                        change.newValue,
+                                        change.fieldName
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Itemized tags ONLY for list fields (like facilities/amenities) */}
+                                {itemizedDiff.hasListDiff && (
+                                  <div className="mt-3 pt-2.5 border-t border-divider flex flex-wrap items-center gap-2">
+                                    <span className="text-[11px] font-semibold text-secondary-text">
+                                      Item Details:
+                                    </span>
+                                    {itemizedDiff.removedItems.map((item) => (
+                                      <span
+                                        key={item}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[11px] font-medium border border-rose-300"
+                                      >
+                                        <Minus className="w-3 h-3 text-rose-600" />
+                                        Removed: {item}
+                                      </span>
+                                    ))}
+                                    {itemizedDiff.addedItems.map((item) => (
+                                      <span
+                                        key={item}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-medium border border-emerald-300"
+                                      >
+                                        <Plus className="w-3 h-3 text-emerald-600" />
+                                        Added: {item}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
                         </div>
-                      ) : (
-                        <span className="text-xs text-secondary-text italic">
-                          -
-                        </span>
                       )}
-                    </td>
-
-                    {/* Now */}
-                    <td className="py-3.5 px-4 align-top">
-                      {parsed.fieldChanges.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {parsed.fieldChanges.map((fc) => {
-                            const itemDiff = computeItemizedDiff(
-                              fc.oldValue,
-                              fc.newValue,
-                              fc.fieldName
-                            );
-                            return (
-                              <div key={fc.fieldName}>
-                                {parsed.fieldChanges.length > 1 && (
-                                  <span className="text-[10px] uppercase font-mono font-bold text-secondary-text block mb-0.5">
-                                    {fc.fieldName}:
-                                  </span>
-                                )}
-                                <div className="p-2 rounded bg-emerald-50/80 border border-emerald-200 text-xs wrap-break-word leading-snug">
-                                  {renderNewValueDiff(
-                                    fc.oldValue,
-                                    fc.newValue,
-                                    fc.fieldName
-                                  )}
-                                </div>
-                                {itemDiff.hasListDiff &&
-                                  itemDiff.addedItems.length > 0 && (
-                                    <div className="mt-1 flex flex-wrap gap-1">
-                                      {itemDiff.addedItems.map((item) => (
-                                        <span
-                                          key={item}
-                                          className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-300"
-                                        >
-                                          + {item}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-black">
-                          {log.description}
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Created At */}
-                    <td className="py-3.5 px-4 align-top">
-                      <div className="text-xs font-medium text-black">
-                        {formattedDate}
-                      </div>
-                      <div className="text-[11px] text-secondary-text mt-0.5">
-                        {relativeTimeStr}
-                      </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          ) : (
+            /* TABLE VIEW WITH PROPER BEFORE & NOW COLUMNS */
+            <div className="mt-3 overflow-x-auto rounded-xl border border-divider">
+              <table className="w-full text-left text-sm min-w-175">
+                <thead className="bg-bg text-secondary-text font-semibold text-xs uppercase border-b border-divider">
+                  <tr>
+                    <th className="py-3 px-4">Actor</th>
+                    <th className="py-3 px-4">Action</th>
+                    <th className="py-3 px-4">Entity & Field</th>
+                    <th className="py-3 px-4 min-w-47.5">Before</th>
+                    <th className="py-3 px-4 min-w-47.5">Now</th>
+                    <th className="py-3 px-4 min-w-40">Date & Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-divider bg-white">
+                  {paginatedLogs.map((log, index) => {
+                    const parsed = parseLogDescription(log.description);
+                    const EntityIcon = getEntityIcon(log.entityName);
+                    const formattedDate = formatLocalDateTime(
+                      log.createdAt,
+                      "DD MMM YYYY, hh:mm A"
+                    );
+                    const relativeTimeStr = formatLocalFromNow(log.createdAt);
+
+                    return (
+                      <tr
+                        key={log.createdAt + index}
+                        className="hover:bg-bg/40 transition-colors"
+                      >
+                        {/* Actor */}
+                        <td className="py-3.5 px-4 align-top">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border tracking-wider ${log.actorType === "admin"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : log.actorType === "client"
+                                ? "bg-purple-50 text-purple-700 border-purple-200"
+                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              }`}
+                          >
+                            <User className="w-3 h-3" />
+                            <span>{log.actorRole || "Club Owner"}</span>
+                          </span>
+                          {log.actorName && (
+                            <div className="text-[11px] text-secondary-text mt-1 truncate max-w-30">
+                              {log.actorName}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Action Type */}
+                        <td className="py-3.5 px-4 align-top">
+                          <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-bold border tracking-wider bg-blue-50 text-blue-700 border-blue-200">
+                            {log.actionType}
+                          </span>
+                        </td>
+
+                        {/* Entity & Field Name */}
+                        <td className="py-3.5 px-4 align-top">
+                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-bg border border-divider text-xs font-medium text-black mb-1">
+                            <EntityIcon className="w-3 h-3 text-secondary-text" />
+                            {log.entityName}
+                          </div>
+                          {parsed.fieldChanges.map((fc) => (
+                            <div
+                              key={fc.fieldName}
+                              className="text-[11px] font-mono text-secondary-text"
+                            >
+                              Field:{" "}
+                              <span className="text-black font-semibold">
+                                {fc.fieldName}
+                              </span>
+                            </div>
+                          ))}
+                        </td>
+
+                        {/* Before */}
+                        <td className="py-3.5 px-4 align-top">
+                          {parsed.fieldChanges.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {parsed.fieldChanges.map((fc) => {
+                                const isList = isListField(fc.fieldName);
+                                const itemDiff = computeItemizedDiff(
+                                  fc.oldValue,
+                                  fc.newValue,
+                                  fc.fieldName
+                                );
+                                const hasActualRemovals =
+                                  isList && itemDiff.removedItems.length > 0;
+
+                                return (
+                                  <div key={fc.fieldName}>
+                                    {parsed.fieldChanges.length > 1 && (
+                                      <span className="text-[10px] uppercase font-mono font-bold text-secondary-text block mb-0.5">
+                                        {fc.fieldName}:
+                                      </span>
+                                    )}
+                                    <div
+                                      className={`p-2 rounded text-xs wrap-break-word leading-snug ${hasActualRemovals
+                                        ? "bg-rose-50/80 border border-rose-200"
+                                        : "bg-slate-50 border border-slate-200"
+                                        }`}
+                                    >
+                                      {renderOldValueDiff(
+                                        fc.oldValue,
+                                        fc.newValue,
+                                        fc.fieldName
+                                      )}
+                                    </div>
+                                    {itemDiff.hasListDiff &&
+                                      itemDiff.removedItems.length > 0 && (
+                                        <div className="mt-1 flex flex-wrap gap-1">
+                                          {itemDiff.removedItems.map((item) => (
+                                            <span
+                                              key={item}
+                                              className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded border border-rose-300"
+                                            >
+                                              - {item}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-secondary-text italic">
+                              -
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Now */}
+                        <td className="py-3.5 px-4 align-top">
+                          {parsed.fieldChanges.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {parsed.fieldChanges.map((fc) => {
+                                const itemDiff = computeItemizedDiff(
+                                  fc.oldValue,
+                                  fc.newValue,
+                                  fc.fieldName
+                                );
+                                return (
+                                  <div key={fc.fieldName}>
+                                    {parsed.fieldChanges.length > 1 && (
+                                      <span className="text-[10px] uppercase font-mono font-bold text-secondary-text block mb-0.5">
+                                        {fc.fieldName}:
+                                      </span>
+                                    )}
+                                    <div className="p-2 rounded bg-emerald-50/80 border border-emerald-200 text-xs wrap-break-word leading-snug">
+                                      {renderNewValueDiff(
+                                        fc.oldValue,
+                                        fc.newValue,
+                                        fc.fieldName
+                                      )}
+                                    </div>
+                                    {itemDiff.hasListDiff &&
+                                      itemDiff.addedItems.length > 0 && (
+                                        <div className="mt-1 flex flex-wrap gap-1">
+                                          {itemDiff.addedItems.map((item) => (
+                                            <span
+                                              key={item}
+                                              className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-300"
+                                            >
+                                              + {item}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-black">
+                              {log.description}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Created At */}
+                        <td className="py-3.5 px-4 align-top">
+                          <div className="text-xs font-medium text-black">
+                            {formattedDate}
+                          </div>
+                          <div className="text-[11px] text-secondary-text mt-0.5">
+                            {relativeTimeStr}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
-    </div>
-  )}
 
       {/* Pagination Footer */}
       {totalLogs > 0 && (

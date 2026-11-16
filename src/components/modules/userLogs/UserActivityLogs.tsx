@@ -585,9 +585,9 @@ export const UserActivityLogs: React.FC<UserActivityLogsProps> = ({
                           }`}
                         >
                           <User className="w-3 h-3" />
-                          <span>{log.actorRole}</span>
-                          {log.actorName && (
-                            <span className="font-normal opacity-85">({log.actorName})</span>
+                          <span>{log.actorName}</span>
+                          {log.actorRole && (
+                            <span className="font-normal opacity-85">({log.actorRole})</span>
                           )}
                         </span>
                       )}

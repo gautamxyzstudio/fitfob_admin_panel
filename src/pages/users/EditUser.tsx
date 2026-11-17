@@ -157,7 +157,7 @@ const EditUser = () => {
     );
   }
 
-  const avatar = client?.selfieUpload?.url || IMAGES.DummyPROFILE;
+  const avatar = client?.selfieUpload|| IMAGES.DummyPROFILE;
 
   // Disabled field styling
   const disabledFieldSx = {

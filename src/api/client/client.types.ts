@@ -124,7 +124,7 @@ export interface ClientDetailResponse {
   clientId: string;
   read_by_admins?: number[] | null;
   faceSimilarity?: number;
-  selfieUpload?: MediaFile | null;
+  selfieUpload?: string;
   governmentId?: MediaFile | null;
   outdoor_subscriptions?: any[];
   user?: ClientUser | null;
@@ -160,5 +160,35 @@ export interface ClientActivityLog {
   actionType: string;
   description: string;
   createdAt: string;
+}
+
+export interface UserGymMembership {
+  membershipId: string;
+  clubName: string;
+  plan: string;
+  amount: number;
+  membershipStatus: string;
+  startDate: string;
+  endDate: string;
+  paymentMethod?: string;
+}
+
+export interface UserCheckinItem {
+  clubName: string;
+  checkinType: string | null;
+  checkinTime: string;
+  createdAt: string;
+}
+
+export interface UserTrialBooking {
+  clubName: string;
+  trialDate: string;
+  trialstatus: string;
+}
+
+export interface UserTrialPeriod {
+  from: string;
+  to: string;
+  Trials: UserTrialBooking[];
 }
 

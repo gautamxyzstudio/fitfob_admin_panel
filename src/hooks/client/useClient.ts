@@ -11,6 +11,9 @@ import {
   getClientCheckinsApi,
   getClientDetailApi,
   getClientListApi,
+  getUserCheckinsApi,
+  getUserGymMembershipsApi,
+  getUserTrialsApi,
   updateClientDetailApi,
 } from "../../api/client/clientApi";
 import type {
@@ -19,6 +22,9 @@ import type {
   ClientDetailResponse,
   ClientListItem,
   UpdateClientPayload,
+  UserCheckinItem,
+  UserGymMembership,
+  UserTrialPeriod,
 } from "../../api/client/client.types";
 import useSnackBarStore from "../../store/snackBar.store";
 import { useMemo } from "react";
@@ -166,5 +172,69 @@ export const useClientCheckins = () => {
     refetch,
   };
 };
+
+/**
+ * Hook to fetch user gym memberships by docId
+ */
+export const useUserGymMemberships = (docId?: string) => {
+  const query = useQuery<UserGymMembership[]>({
+    queryKey: ["userGymMemberships", docId],
+    queryFn: () => getUserGymMembershipsApi(docId || ""),
+    enabled: Boolean(docId),
+    placeholderData: keepPreviousData,
+  });
+
+  return {
+    ...query,
+    memberships: query.data || [],
+    loading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
+};
+
+/**
+ * Hook to fetch user checkin history by docId
+ */
+export const useUserCheckinDetails = (docId?: string) => {
+  const query = useQuery<UserCheckinItem[]>({
+    queryKey: ["userCheckinDetails", docId],
+    queryFn: () => getUserCheckinsApi(docId || ""),
+    enabled: Boolean(docId),
+    placeholderData: keepPreviousData,
+  });
+
+  return {
+    ...query,
+    checkins: query.data || [],
+    loading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
+};
+
+/**
+ * Hook to fetch user trial periods and trial bookings by docId
+ */
+export const useUserTrials = (docId?: string) => {
+  const query = useQuery<UserTrialPeriod[]>({
+    queryKey: ["userTrials", docId],
+    queryFn: () => getUserTrialsApi(docId || ""),
+    enabled: Boolean(docId),
+    placeholderData: keepPreviousData,
+  });
+
+  return {
+    ...query,
+    trialPeriods: query.data || [],
+    loading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
+};
+
 
 

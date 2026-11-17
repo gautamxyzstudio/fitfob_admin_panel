@@ -71,4 +71,12 @@ export const EndPoints = {
   // Free Trial Settings
   trialSettings: (clubOwnerDocumentId: string) =>
     `${BASE_URL}/api/trial-settings/${clubOwnerDocumentId}`,
+
+  // User Gym Memberships, Checkins & Trials
+  userGymMemberships: (docId: string) =>
+    `${BASE_URL}/api/gym-memberships/${docId}`,
+  userCheckin: (docId: string) =>
+    `${BASE_URL}/api/checkin/${docId}`,
+  userTrials: (docId: string) =>
+    `${BASE_URL}/api/trials/${docId}`,
 };

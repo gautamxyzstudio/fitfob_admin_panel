@@ -8,6 +8,9 @@ import type {
   ClientDetailResponse,
   ClientListItem,
   UpdateClientPayload,
+  UserCheckinItem,
+  UserGymMembership,
+  UserTrialPeriod,
 } from "./client.types";
 
 const getAuthHeaders = () => {
@@ -156,5 +159,87 @@ export const getClientCheckinsApi = async (): Promise<ClientCheckin[]> => {
     return [];
   }
 };
+
+/**
+ * Fetch user gym memberships by docId
+ * GET /api/gym-memberships/:docId
+ */
+export const getUserGymMembershipsApi = async (
+  docId: string,
+): Promise<UserGymMembership[]> => {
+  try {
+    const response = await api.get(EndPoints.userGymMemberships(docId), {
+      headers: getAuthHeaders(),
+    });
+
+    const data = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+      ? response.data.data
+      : [];
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return [];
+    }
+    console.warn("Could not fetch user gym memberships", error);
+    return [];
+  }
+};
+
+/**
+ * Fetch user checkin list by docId
+ * GET /api/checkin/:docId
+ */
+export const getUserCheckinsApi = async (
+  docId: string,
+): Promise<UserCheckinItem[]> => {
+  try {
+    const response = await api.get(EndPoints.userCheckin(docId), {
+      headers: getAuthHeaders(),
+    });
+
+    const data = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+      ? response.data.data
+      : [];
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return [];
+    }
+    console.warn("Could not fetch user check-ins", error);
+    return [];
+  }
+};
+
+/**
+ * Fetch user trials list by docId
+ * GET /api/trials/:docId
+ */
+export const getUserTrialsApi = async (
+  docId: string,
+): Promise<UserTrialPeriod[]> => {
+  try {
+    const response = await api.get(EndPoints.userTrials(docId), {
+      headers: getAuthHeaders(),
+    });
+
+    const data = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+      ? response.data.data
+      : [];
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return [];
+    }
+    console.warn("Could not fetch user trials", error);
+    return [];
+  }
+};
+
 
 

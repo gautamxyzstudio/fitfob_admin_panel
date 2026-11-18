@@ -125,3 +125,39 @@ export interface ClubOwnerDocument {
 }
 
 export type ClubListResponse = ClubResponse[];
+
+export interface ClubMembershipRecord {
+  clientName: string;
+  selfieUrl?: string;
+  startDate: string;
+  endDate: string;
+  amount: number;
+  membershipStatus: string;
+  plan: string;
+  membershipId: string;
+  [key: string]: any;
+}
+
+export interface ClubCheckinRecord {
+  clientName: string;
+  selfieUrl?: string;
+  checkintype: string | null;
+  checkinTime: string;
+  createdAt: string;
+  [key: string]: any;
+}
+
+export interface ClubTrialRecord {
+  id: number;
+  documentId: string;
+  clientName: string;
+  selfieUrl?: string;
+  trialDate: string;
+  trialstatus: string;
+  createdAt: string;
+  clientId: string;
+  clientDocumentId: string;
+  gender: string;
+  [key: string]: any;
+}
+

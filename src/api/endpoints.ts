@@ -79,4 +79,12 @@ export const EndPoints = {
     `${BASE_URL}/api/checkin/${docId}`,
   userTrials: (docId: string) =>
     `${BASE_URL}/api/trials/${docId}`,
+
+  // Club Memberships, Checkins & Trials
+  clubMemberships: (docId: string) =>
+    `${BASE_URL}/api/club-memberships/${docId}`,
+  clubCheckins: (docId: string) =>
+    `${BASE_URL}/api/club/checkins/${docId}`,
+  clubOwnerTrials: (docId: string) =>
+    `${BASE_URL}/api/club-owner-trials/${docId}`,
 };

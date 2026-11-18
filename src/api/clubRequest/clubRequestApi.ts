@@ -4,9 +4,12 @@ import { EndPoints } from "../endpoints";
 import api from "../apiInstance";
 import { useAuthStore } from "../../store/auth.store";
 import type {
+  ClubCheckinRecord,
   ClubListResponse,
+  ClubMembershipRecord,
   ClubOwnerActivityLog,
   ClubResponse,
+  ClubTrialRecord,
 } from "./clubRequest.types";
 
 export const unverifiedOwnersApi = async (
@@ -263,4 +266,92 @@ export const toggleSendNotificationsApi = async (
     throw error;
   }
 };
+
+/**
+ * Fetch club gym memberships by club owner documentId
+ */
+export const getClubMembershipsApi = async (
+  docId: string,
+): Promise<ClubMembershipRecord[]> => {
+  const { token } = useAuthStore.getState();
+  try {
+    const response = await api.get(EndPoints.clubMemberships(docId), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const resData = response.data;
+    if (Array.isArray(resData)) return resData;
+    if (resData?.data && Array.isArray(resData.data)) return resData.data;
+    return [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data?.error?.message ||
+          error.response?.data?.message ||
+          "Failed to fetch club memberships",
+      );
+    }
+    throw error;
+  }
+};
+
+/**
+ * Fetch club checkins by club owner documentId
+ */
+export const getClubCheckinsApi = async (
+  docId: string,
+): Promise<ClubCheckinRecord[]> => {
+  const { token } = useAuthStore.getState();
+  try {
+    const response = await api.get(EndPoints.clubCheckins(docId), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const resData = response.data;
+    if (Array.isArray(resData)) return resData;
+    if (resData?.data && Array.isArray(resData.data)) return resData.data;
+    return [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data?.error?.message ||
+          error.response?.data?.message ||
+          "Failed to fetch club check-ins",
+      );
+    }
+    throw error;
+  }
+};
+
+/**
+ * Fetch club owner trials by club owner documentId
+ */
+export const getClubOwnerTrialsApi = async (
+  docId: string,
+): Promise<ClubTrialRecord[]> => {
+  const { token } = useAuthStore.getState();
+  try {
+    const response = await api.get(EndPoints.clubOwnerTrials(docId), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const resData = response.data;
+    if (Array.isArray(resData)) return resData;
+    if (resData?.data && Array.isArray(resData.data)) return resData.data;
+    return [];
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data?.error?.message ||
+          error.response?.data?.message ||
+          "Failed to fetch club trials",
+      );
+    }
+    throw error;
+  }
+};
+
 

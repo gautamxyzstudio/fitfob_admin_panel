@@ -7,8 +7,11 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import {
+  getClubCheckinsApi,
+  getClubMembershipsApi,
   getClubOwnerActivityLogsApi,
   getClubOwnerById,
+  getClubOwnerTrialsApi,
   rejectApproval,
   toggleSendNotificationsApi,
   unverifiedOwnersApi,
@@ -17,9 +20,12 @@ import {
   verifyApproval,
 } from "../../api/clubRequest/clubRequestApi";
 import type {
+  ClubCheckinRecord,
   ClubListResponse,
+  ClubMembershipRecord,
   ClubOwnerActivityLog,
   ClubResponse,
+  ClubTrialRecord,
 } from "../../api/clubRequest/clubRequest.types";
 
 // 🔹 Fetch Unverified Club Owners (useQuery)
@@ -232,3 +238,97 @@ export const useToggleSendNotifications = () => {
     isToggling: mutation.isPending,
   };
 };
+
+/**
+ * Hook to fetch club gym memberships by club owner documentId
+ */
+export function useClubMemberships<TData = ClubMembershipRecord[]>(
+  docId?: string,
+  options?: Omit<
+    UseQueryOptions<ClubMembershipRecord[], Error, TData, any>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery<ClubMembershipRecord[], Error, TData, any>({
+    queryKey: ["clubMemberships", docId],
+    queryFn: () => getClubMembershipsApi(docId || ""),
+    enabled: Boolean(docId),
+    placeholderData: keepPreviousData,
+    ...options,
+  });
+
+  const memberships: TData = (query.data ?? []) as unknown as TData;
+
+  return {
+    ...query,
+    memberships,
+    loading: query.isLoading,
+    isFetching: query.isFetching,
+    isPlaceholderData: query.isPlaceholderData,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
+}
+
+/**
+ * Hook to fetch club check-in history by club owner documentId
+ */
+export function useClubCheckins<TData = ClubCheckinRecord[]>(
+  docId?: string,
+  options?: Omit<
+    UseQueryOptions<ClubCheckinRecord[], Error, TData, any>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery<ClubCheckinRecord[], Error, TData, any>({
+    queryKey: ["clubCheckins", docId],
+    queryFn: () => getClubCheckinsApi(docId || ""),
+    enabled: Boolean(docId),
+    placeholderData: keepPreviousData,
+    ...options,
+  });
+
+  const checkins: TData = (query.data ?? []) as unknown as TData;
+
+  return {
+    ...query,
+    checkins,
+    loading: query.isLoading,
+    isFetching: query.isFetching,
+    isPlaceholderData: query.isPlaceholderData,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
+}
+
+/**
+ * Hook to fetch club trial passes by club owner documentId
+ */
+export function useClubOwnerTrials<TData = ClubTrialRecord[]>(
+  docId?: string,
+  options?: Omit<
+    UseQueryOptions<ClubTrialRecord[], Error, TData, any>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const query = useQuery<ClubTrialRecord[], Error, TData, any>({
+    queryKey: ["clubOwnerTrials", docId],
+    queryFn: () => getClubOwnerTrialsApi(docId || ""),
+    enabled: Boolean(docId),
+    placeholderData: keepPreviousData,
+    ...options,
+  });
+
+  const trials: TData = (query.data ?? []) as unknown as TData;
+
+  return {
+    ...query,
+    trials,
+    loading: query.isLoading,
+    isFetching: query.isFetching,
+    isPlaceholderData: query.isPlaceholderData,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
+}
+

@@ -39,6 +39,7 @@ import {
 import { formatLocalDate } from "../../utility/dayjs";
 import type { ClubOwnerDocument } from "../../api/clubRequest/clubRequest.types";
 import ClubOwnerLogs from "../../components/modules/clubLogs/ClubOwnerLogs";
+import ClubRecordsTabs from "../../components/modules/clubActivity/ClubRecordsTabs";
 import GymContractModal from "../../components/modules/gymContract/GymContractModal";
 import FreeTrialModal from "../../components/modules/trialSettings/FreeTrialModal";
 import { useTrialSettings } from "../../hooks/trialSettings/useTrialSettings";
@@ -702,6 +703,14 @@ const ViewClubRequest = () => {
           </div>
         )}
       </CustomBox>
+
+      {/* Club Activity Records: Gym Memberships, Checkin History & Trial Passes */}
+      {isAcceptedClub && Boolean(clubOwnerDocumentId) && (
+        <ClubRecordsTabs
+          clubOwnerDocumentId={clubOwnerDocumentId}
+          clubName={selectedOwner?.clubName}
+        />
+      )}
 
       {/* Club Owner Action Logs - Only shown when request is accepted/approved */}
       {isAcceptedClub && <ClubOwnerLogs owner={selectedOwner} />}

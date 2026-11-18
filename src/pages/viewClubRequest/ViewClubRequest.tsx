@@ -388,14 +388,14 @@ const ViewClubRequest = () => {
             )}
 
             <div className="flex flex-row gap-x-3 items-center">
-              <button
+              {isAcceptedClub && (<button
                 type="button"
                 onClick={() => setTrialModalOpen(true)}
                 title="Configure Free Trial"
                 className="bg-background hover:bg-red-50 text-secondary-text hover:text-primary w-12 h-12 rounded p-2.5 flex items-center justify-center cursor-pointer transition border border-divider shadow-xs"
               >
                 <Sparkles className="w-5 h-5 text-primary" />
-              </button>
+              </button>)}
               <button
                 onClick={() => console.log("Chat")}
                 className="bg-red w-12 h-12 rounded p-2.5 items-center cursor-pointer "
@@ -483,7 +483,7 @@ const ViewClubRequest = () => {
       )}
 
       {/* Free Trial Program Quick-Access Card */}
-      <CustomBox customClasses="p-4 px-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-red-100/70 bg-linear-to-r from-red-50/20 via-white to-white">
+      {isAcceptedClub && (<CustomBox customClasses="p-4 px-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-red-100/70 bg-linear-to-r from-red-50/20 via-white to-white">
         <div className="flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-red-100/80 text-primary flex items-center justify-center shrink-0">
             <Sparkles className="w-5 h-5 stroke-2" />
@@ -521,13 +521,13 @@ const ViewClubRequest = () => {
           <Sparkles className="w-3.5 h-3.5" />
           <span>Configure Free Trial</span>
         </button>
-      </CustomBox>
+      </CustomBox>)}
 
       {/* Club Information */}
       <CustomBox customClasses="p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Club Information</h2>
-          <button
+         {isAcceptedClub && ( <button
             type="button"
             onClick={() => setTrialModalOpen(true)}
             className="text-xs text-primary font-semibold hover:underline flex items-center gap-1.5 cursor-pointer bg-red-50 hover:bg-red-100/70 px-2.5 py-1 rounded-md transition"
@@ -539,7 +539,7 @@ const ViewClubRequest = () => {
                 ? `Active (${trialSettings.dailyTrialLimit}/day)`
                 : "Disabled"}
             </span>
-          </button>
+          </button>)}
         </div>
         <div className="mt-3 flex flex-row w-full flex-wrap gap-y-3.75">
           <InfoField label="Owner’s name" value={selectedOwner?.ownerName} customClasses="capitalize" />
@@ -550,14 +550,14 @@ const ViewClubRequest = () => {
             label="Club Category"
             value={selectedOwner?.clubCategory}
           />
-          <InfoField
+          {isAcceptedClub && (<InfoField
             label="Free Trial"
             value={
               trialSettings?.isTrialEnabled
                 ? `Enabled (${trialSettings.dailyTrialLimit} passes/day)`
                 : "Disabled"
             }
-          />
+          />)}
         </div>
         <WeeklySchedule
           scheduleItems={schedulingData.scheduleItems}

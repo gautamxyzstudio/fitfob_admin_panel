@@ -10,7 +10,7 @@ import {
   useUserGymMemberships,
   useUserTrials,
 } from "../../hooks/client/useClient";
-import { IMAGES } from "../../assets/exports";
+import { getInitialAvatar, getMediaUrl } from "../../utility/utili";
 import {
   toLocalDate,
   formatLocalDate,
@@ -159,26 +159,15 @@ const UserDetail = () => {
   const [trialsPage, setTrialsPage] = useState<number>(0);
   const trialsRowsPerPage = 5;
 
-  // Normalized memberships list (with fallback to client.local_subscriptions if API returns empty)
+  const [selfieError, setSelfieError] = useState(false);
+
+  // Normalized memberships list
   const resolvedMemberships = useMemo(() => {
     if (memberships && memberships.length > 0) {
       return memberships;
     }
-    const subs = client?.local_subscriptions;
-    if (subs && subs.length > 0) {
-      return subs.map((sub: any, idx: number) => ({
-        membershipId: sub.documentId || `MEM-${sub.id || idx + 1}`,
-        clubName: sub.club_owner?.clubName || "Club Partner",
-        plan: sub.local_membership_plan?.planName || "Standard",
-        amount: sub.local_membership_plan?.price || 0,
-        membershipStatus: sub.subscriptionStatus || "active",
-        startDate: sub.startDate || client?.createdAt || "",
-        endDate: sub.endDate || sub.startDate || client?.createdAt || "",
-        paymentMethod: sub.paymentMethod || "UPI",
-      }));
-    }
     return [];
-  }, [memberships, client]);
+  }, [memberships]);
 
   // Paginated memberships
   const totalMembershipPages = Math.max(1, Math.ceil(resolvedMemberships.length / membershipRowsPerPage));
@@ -235,7 +224,9 @@ const UserDetail = () => {
     );
   }
 
-  const avatar = client?.selfieUpload || IMAGES.DummyPROFILE;
+  const rawSelfie = client?.selfieUpload;
+  const selfieUrl = getMediaUrl(rawSelfie);
+  const avatar = !selfieError && selfieUrl ? selfieUrl : getInitialAvatar(client?.name);
   const isBlocked = client?.user?.blocked === true;
   const isActive = !isBlocked;
 
@@ -287,8 +278,10 @@ const UserDetail = () => {
       <CustomBox customClasses="p-5 flex flex-row items-center justify-between">
         <div className="flex flex-row items-center gap-x-4">
           <img
+            key={selfieUrl || "no-selfie"}
             src={avatar}
             alt={client?.name || "User Avatar"}
+            onError={() => setSelfieError(true)}
             className="w-18 h-18 rounded-2xl object-cover border border-gray-100 shadow-xs"
           />
           <div className="flex flex-col gap-y-1">

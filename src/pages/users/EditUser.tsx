@@ -5,7 +5,7 @@ import CustomBox from "../../components/atoms/customBox/CustomBox";
 import ActivityIndicator from "../../components/atoms/activityIndicator/ActivityIndicator";
 import { useClientDetail, useUpdateClient } from "../../hooks/client/useClient";
 import type { UpdateClientPayload } from "../../api/client/client.types";
-import { IMAGES } from "../../assets/exports";
+import { getInitialAvatar, getMediaUrl } from "../../utility/utili";
 import { CameraAlt } from "@mui/icons-material";
 import { Switch, TextField } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -46,6 +46,7 @@ const EditUser = () => {
   const [signUpDate, setSignUpDate] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState(""); // Stored as YYYY-MM-DD
   const [isActive, setIsActive] = useState(true);
+  const [selfieError, setSelfieError] = useState(false);
 
   // Initial State to track changes
   const [initialValues, setInitialValues] = useState<{
@@ -157,7 +158,9 @@ const EditUser = () => {
     );
   }
 
-  const avatar = client?.selfieUpload|| IMAGES.DummyPROFILE;
+  const rawSelfie = client?.selfieUpload;
+  const selfieUrl = getMediaUrl(rawSelfie);
+  const avatar = !selfieError && selfieUrl ? selfieUrl : getInitialAvatar(name || client?.name);
 
   // Disabled field styling
   const disabledFieldSx = {
@@ -210,8 +213,10 @@ const EditUser = () => {
         <CustomBox customClasses="p-5 flex flex-row items-center justify-start gap-x-4">
           <div className="relative w-18 h-18">
             <img
+              key={selfieUrl || "no-selfie"}
               src={avatar}
               alt="avatar"
+              onError={() => setSelfieError(true)}
               className="w-18 h-18 rounded-2xl object-cover border border-gray-100 shadow-xs"
             />
             <div

@@ -613,6 +613,30 @@ export const getClubPhotoUrl = (photo: any, fallback: string = ""): string => {
   return fallback;
 };
 
+/**
+ * Generates an SVG Data URI avatar featuring the user's initials with brand styling
+ */
+export const getInitialAvatar = (name?: string): string => {
+  const cleanName = (name || "User").trim();
+  const words = cleanName.split(/\s+/).filter(Boolean);
+  const initials =
+    words.length >= 2
+      ? (words[0][0] + words[words.length - 1][0]).toUpperCase()
+      : cleanName.slice(0, 1).toUpperCase() || "U";
+
+  const safeInitials = initials
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="100%" height="100%" rx="24" fill="#FEE2E2"/>
+    <text x="50%" y="54%" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="48" font-weight="700" fill="#E23744" text-anchor="middle" dominant-baseline="middle">${safeInitials}</text>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
 export interface ExtractedDocumentDetails {
   url: string;
   name: string;
